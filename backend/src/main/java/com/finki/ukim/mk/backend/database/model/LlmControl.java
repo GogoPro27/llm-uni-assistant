@@ -9,6 +9,7 @@ import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Builder.Default;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -32,9 +33,13 @@ public class LlmControl {
   @Column(name = "model_name")
   private String modelName;
 
+  @Column(name = "llm_provider")
+  private String llmProvider;
+
   @Column(name = "instructions")
   private String instructions;
 
   @Column(name = "params", columnDefinition = "jsonb")
-  private String params;
+  @Default
+  private String params = "{}";
 }

@@ -10,6 +10,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -42,6 +43,11 @@ public class ChatMessage {
   @Column(name = "content", nullable = false)
   private String content;
 
-  @Column(name = "created_at")
+  @Column(name = "created_at", updatable = false)
   private OffsetDateTime createdAt;
+
+  @PrePersist
+  protected void onCreate() {
+    createdAt = OffsetDateTime.now();
+  }
 }

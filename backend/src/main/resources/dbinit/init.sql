@@ -65,6 +65,7 @@ CREATE TABLE llm_controls
     group_subject_id BIGINT PRIMARY KEY
         REFERENCES professor_group_subjects (group_subject_id) ON DELETE CASCADE,
     model_name       TEXT,
+    llm_provider      TEXT,
     instructions     TEXT,
     params           JSONB DEFAULT '{}'::jsonb
 );

@@ -9,6 +9,7 @@ import jakarta.persistence.MapsId;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Builder.Default;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -34,5 +35,6 @@ public class StudentEnrollment {
   private ProfessorGroupSubject groupSubject;
 
   @Column(name = "can_use_llm", nullable = false)
-  private boolean canUseLlm;
+  @Default
+  private boolean canUseLlm = false;
 }
