@@ -35,14 +35,14 @@ CREATE TABLE subjects
     subject_id BIGSERIAL PRIMARY KEY,
     name       TEXT NOT NULL UNIQUE,
     short_name TEXT NOT NULL UNIQUE,
-    code       TEXT NOT NULL UNIQUE,
+    code       TEXT NOT NULL UNIQUE
 );
 
 CREATE TABLE professor_group_subjects
 (
     group_subject_id BIGSERIAL PRIMARY KEY,
     subject_id       BIGINT NOT NULL REFERENCES subjects (subject_id),
-    short_name TEXT NOT NULL UNIQUE
+    short_name       TEXT   NOT NULL UNIQUE
 );
 
 CREATE TABLE professor_group_subject_members
@@ -74,10 +74,10 @@ CREATE TYPE resource_kind AS ENUM ('file', 'link', 'note');
 CREATE TABLE llm_resources
 (
     resource_id      BIGSERIAL PRIMARY KEY,
-    group_subject_id BIGINT         NOT NULL
+    group_subject_id BIGINT        NOT NULL
         REFERENCES professor_group_subjects (group_subject_id) ON DELETE CASCADE,
-    kind             resource_kind  NOT NULL,
-    title            TEXT           NOT NULL,
+    kind             resource_kind NOT NULL,
+    title            TEXT          NOT NULL,
 
     url              TEXT,
     file_uri         TEXT,
