@@ -1,7 +1,7 @@
 package com.finki.ukim.mk.backend.config;
 
 import com.finki.ukim.mk.backend.filter.JwtAuthenticationFilter;
-import com.finki.ukim.mk.backend.service.security.CustomUserDetailsService;
+import com.finki.ukim.mk.backend.security.CustomUserDetailsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

@@ -1,4 +1,4 @@
-package com.finki.ukim.mk.backend.service;
+package com.finki.ukim.mk.backend.service.domain;
 
 import com.finki.ukim.mk.backend.database.model.ChatMessage;
 

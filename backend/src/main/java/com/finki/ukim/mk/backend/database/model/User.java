@@ -11,6 +11,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -52,4 +53,22 @@ public class User {
   @Enumerated(EnumType.STRING)
   @Default
   private Set<UserRole> roles = new HashSet<>();
+
+  @OneToOne(mappedBy = "user")
+  private Student student;
+
+  @OneToOne(mappedBy = "user")
+  private Professor professor;
+
+  public boolean isStudent() {
+    return student != null;
+  }
+
+  public boolean isProfessor() {
+    return professor != null;
+  }
+
+  public boolean hasRole() {
+    return student != null || professor != null;
+  }
 }

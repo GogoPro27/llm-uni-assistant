@@ -1,13 +1,16 @@
 package com.finki.ukim.mk.backend.database.model;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinColumns;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
@@ -17,6 +20,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "chat_sessions")
@@ -33,10 +38,13 @@ public class ChatSession {
 
   @ManyToOne
   @JoinColumns({
-    @JoinColumn(name = "student_id", referencedColumnName = "student_id"),
+    @JoinColumn(name = "user_id", referencedColumnName = "user_id"),
     @JoinColumn(name = "group_subject_id", referencedColumnName = "group_subject_id")
   })
-  private StudentEnrollment enrollment;
+  private Enrollment enrollment;
+
+  @OneToMany(mappedBy = "session", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+  private List<ChatMessage> messages = new ArrayList<>();
 
   @Column(name = "title")
   private String title;

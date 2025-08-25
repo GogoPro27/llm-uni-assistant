@@ -1,4 +1,4 @@
-package com.finki.ukim.mk.backend.service.security;
+package com.finki.ukim.mk.backend.security;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;

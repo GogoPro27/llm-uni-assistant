@@ -1,11 +1,11 @@
-package com.finki.ukim.mk.backend.service.impl;
+package com.finki.ukim.mk.backend.service.domain.impl;
 
 import com.finki.ukim.mk.backend.database.model.ChatMessage;
 import com.finki.ukim.mk.backend.database.model.ChatSession;
 import com.finki.ukim.mk.backend.database.model.LlmControl;
 import com.finki.ukim.mk.backend.database.repository.ChatMessageRepository;
 import com.finki.ukim.mk.backend.mapper.ChatMessageMapper;
-import com.finki.ukim.mk.backend.service.LlmService;
+import com.finki.ukim.mk.backend.service.domain.LlmService;
 import com.finki.ukim.mk.backend.util.LlmParametersUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.chat.client.ChatClient;

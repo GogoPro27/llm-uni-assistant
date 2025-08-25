@@ -12,10 +12,10 @@ import java.io.Serializable;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class StudentEnrollmentId implements Serializable {
+public class EnrollmentId implements Serializable {
 
-  @Column(name = "student_id")
-  private Long studentId;
+  @Column(name = "user_id")
+  private Long userId;
 
   @Column(name = "group_subject_id")
   private Long groupSubjectId;

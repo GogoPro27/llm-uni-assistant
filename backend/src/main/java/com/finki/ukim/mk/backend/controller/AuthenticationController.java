@@ -2,7 +2,7 @@ package com.finki.ukim.mk.backend.controller;
 
 import com.finki.ukim.mk.backend.dto.LoginRequest;
 import com.finki.ukim.mk.backend.dto.LoginResponse;
-import com.finki.ukim.mk.backend.service.security.AuthenticationService;
+import com.finki.ukim.mk.backend.service.domain.AuthenticationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

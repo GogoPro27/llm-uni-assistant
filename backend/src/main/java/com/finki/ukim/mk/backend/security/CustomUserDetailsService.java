@@ -1,4 +1,4 @@
-package com.finki.ukim.mk.backend.service.security;
+package com.finki.ukim.mk.backend.security;
 
 import com.finki.ukim.mk.backend.database.model.User;
 import com.finki.ukim.mk.backend.database.repository.UserRepository;

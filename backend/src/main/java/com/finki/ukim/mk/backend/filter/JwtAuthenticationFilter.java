@@ -1,7 +1,7 @@
 package com.finki.ukim.mk.backend.filter;
 
-import com.finki.ukim.mk.backend.service.security.CustomUserDetailsService;
-import com.finki.ukim.mk.backend.service.security.JwtService;
+import com.finki.ukim.mk.backend.security.CustomUserDetailsService;
+import com.finki.ukim.mk.backend.security.JwtService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

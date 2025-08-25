@@ -52,12 +52,12 @@ CREATE TABLE professor_group_subject_members
     PRIMARY KEY (group_subject_id, professor_id)
 );
 
-CREATE TABLE student_enrollments
+CREATE TABLE enrollments
 (
-    student_id       BIGINT  NOT NULL REFERENCES students (student_id),
+    user_id          BIGINT  NOT NULL REFERENCES users (user_id),
     group_subject_id BIGINT  NOT NULL REFERENCES professor_group_subjects (group_subject_id),
     can_use_llm      BOOLEAN NOT NULL DEFAULT FALSE,
-    PRIMARY KEY (student_id, group_subject_id)
+    PRIMARY KEY (user_id, group_subject_id)
 );
 
 CREATE TABLE llm_controls
@@ -94,7 +94,7 @@ CREATE TYPE message_origin AS ENUM ('user', 'assistant');
 CREATE TABLE chat_sessions
 (
     session_id       BIGSERIAL PRIMARY KEY,
-    student_id       BIGINT      NOT NULL REFERENCES students (student_id),
+    user_id          BIGINT      NOT NULL REFERENCES users (user_id),
     group_subject_id BIGINT      NOT NULL REFERENCES professor_group_subjects (group_subject_id),
 
     title            TEXT,
@@ -103,8 +103,8 @@ CREATE TABLE chat_sessions
     updated_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
     CONSTRAINT fk_session_enrollment
-        FOREIGN KEY (student_id, group_subject_id)
-            REFERENCES student_enrollments (student_id, group_subject_id)
+        FOREIGN KEY (user_id, group_subject_id)
+            REFERENCES enrollments (user_id, group_subject_id)
             ON DELETE CASCADE
 );
 
