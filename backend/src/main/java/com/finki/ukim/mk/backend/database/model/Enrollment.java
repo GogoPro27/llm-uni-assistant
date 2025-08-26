@@ -1,9 +1,9 @@
 package com.finki.ukim.mk.backend.database.model;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.MapsId;
@@ -38,11 +38,11 @@ public class Enrollment {
   @MapsId("groupSubjectId")
   @JoinColumn(name = "group_subject_id", nullable = false)
   private ProfessorGroupSubject groupSubject;
-  
-  @OneToMany(mappedBy = "enrollment", fetch = FetchType.LAZY)
+
+  @OneToMany(mappedBy = "enrollment", cascade = CascadeType.ALL, orphanRemoval = true)
   @Default
   private List<ChatSession> chatSessions = new ArrayList<>();
-  
+
   @Column(name = "can_use_llm", nullable = false)
   @Default
   private boolean canUseLlm = false;

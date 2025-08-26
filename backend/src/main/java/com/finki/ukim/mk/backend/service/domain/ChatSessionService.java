@@ -6,6 +6,6 @@ import com.finki.ukim.mk.backend.database.model.ChatSession;
 public interface ChatSessionService {
   ChatSession openSession(Long subjectId);
   ChatSession getSessionWithMessagesById(Long sessionId);
-  ChatMessage sendMessageInSession(Long sessionId, ChatMessage message);
+  ChatMessage sendMessageInSession(ChatMessage message);
   void deleteSession(Long sessionId);
 }

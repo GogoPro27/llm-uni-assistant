@@ -50,7 +50,11 @@ public class ChatSessionServiceImpl implements ChatSessionService {
   }
 
   @Override
-  public ChatMessage sendMessageInSession(Long sessionId, ChatMessage message) {
+  public ChatMessage sendMessageInSession(ChatMessage message) {
+    ChatSession session = message.getSession();
+    if(session.getMessages().isEmpty()) {
+      session.setTitle(message.getContent().substring(0, 10));
+    }
     ChatMessage receivedMessage = llmService.sendMessage(message);
     return chatMessageService.save(receivedMessage);
   }

@@ -1,6 +1,8 @@
 package com.finki.ukim.mk.backend.database.repository;
 
+import com.finki.ukim.mk.backend.database.model.Professor;
 import com.finki.ukim.mk.backend.database.model.ProfessorGroupSubject;
+import com.finki.ukim.mk.backend.database.model.Subject;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -20,4 +22,6 @@ public interface ProfessorGroupSubjectRepository extends JpaRepository<Professor
 
   @Query("SELECT DISTINCT pgs FROM ProfessorGroupSubject pgs LEFT JOIN FETCH pgs.members WHERE pgs.subject.id = :subjectId")
   List<ProfessorGroupSubject> findBySubjectIdWithMembers(@Param("subjectId") Long subjectId);
+
+  Boolean existsBySubjectAndMembersContains(Subject subject, Professor professor);
 }

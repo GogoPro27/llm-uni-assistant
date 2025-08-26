@@ -14,4 +14,6 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Enrollme
 
   @Query("SELECT e FROM Enrollment e WHERE e.user.id = :userId AND e.groupSubject.subject.id = :subjectId")
   Optional<Enrollment> findByUserIdAndSubjectId(@Param("userId") Long userId, @Param("subjectId") Long subjectId);
+
+  Boolean existsByUserIdAndGroupSubjectId(Long userId, Long groupSubjectId);
 }

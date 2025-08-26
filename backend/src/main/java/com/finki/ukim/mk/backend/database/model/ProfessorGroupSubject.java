@@ -20,8 +20,11 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Entity
 @Table(name = "professor_group_subjects")
@@ -62,10 +65,15 @@ public class ProfessorGroupSubject {
   @Default
   private Set<LlmResource> llmResources = new HashSet<>();
 
+  @OneToMany(mappedBy = "groupSubject", cascade = CascadeType.ALL, orphanRemoval = true)
+  @ToString.Exclude
+  private List<Enrollment> enrollments = new ArrayList<>();
+
   public void addProfessor(Professor professor) {
     if (professor != null) {
       this.members.add(professor);
       professor.getGroupSubjects().add(this);
+      updateShortName();
     }
   }
 
@@ -73,7 +81,15 @@ public class ProfessorGroupSubject {
     if (professor != null) {
       this.members.remove(professor);
       professor.getGroupSubjects().remove(this);
+      updateShortName();
     }
+  }
+
+  private void updateShortName() {
+    this.shortName = members.stream()
+      .map(Professor::getShortName)
+      .sorted()
+      .collect(Collectors.joining(""));
   }
 
 }
