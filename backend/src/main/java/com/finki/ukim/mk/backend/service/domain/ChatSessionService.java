@@ -8,4 +8,5 @@ public interface ChatSessionService {
   ChatSession getSessionWithMessagesById(Long sessionId);
   ChatMessage sendMessageInSession(ChatMessage message);
   void deleteSession(Long sessionId);
+  ChatSession getSessionById(Long sessionId);
 }

@@ -6,32 +6,34 @@ import com.finki.ukim.mk.backend.database.model.ProfessorGroupSubject;
 import com.finki.ukim.mk.backend.database.model.Subject;
 import com.finki.ukim.mk.backend.database.model.User;
 import com.finki.ukim.mk.backend.database.repository.EnrollmentRepository;
-import com.finki.ukim.mk.backend.database.repository.ProfessorGroupSubjectRepository;
 import com.finki.ukim.mk.backend.database.repository.SubjectRepository;
+import com.finki.ukim.mk.backend.exception.GroupDoesntBelongToSubjectException;
 import com.finki.ukim.mk.backend.exception.ProfessorAlreadyInGroupException;
-import com.finki.ukim.mk.backend.exception.ProfessorGroupSubjectNotFoundException;
 import com.finki.ukim.mk.backend.exception.SubjectNotFoundException;
 import com.finki.ukim.mk.backend.exception.UnauthorizedUserException;
 import com.finki.ukim.mk.backend.exception.UserAlreadyEnrolledException;
 import com.finki.ukim.mk.backend.exception.UserNotEnrolledException;
 import com.finki.ukim.mk.backend.service.domain.AuthenticationService;
 import com.finki.ukim.mk.backend.service.domain.EnrollmentService;
-import jakarta.transaction.Transactional;
+import com.finki.ukim.mk.backend.service.domain.ProfessorGroupSubjectService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
 import java.util.HashSet;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class EnrollmentServiceImpl implements EnrollmentService {
   private final EnrollmentRepository enrollmentRepository;
-  private final ProfessorGroupSubjectRepository professorGroupSubjectRepository;
+  private final ProfessorGroupSubjectService professorGroupSubjectService;
   private final SubjectRepository subjectRepository;
   private final AuthenticationService authenticationService;
 
   @Override
+  @Transactional
   public Enrollment enrollAndCreateGroup(Long subjectId) {
     User currentUser = validateAndGetUser();
     Subject subject = validateAndGetSubject(subjectId);
@@ -44,7 +46,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
       .shortName(currentProfessor.getShortName())
       .members(new HashSet<>(Collections.singletonList(currentProfessor)))
       .build();
-    professorGroupSubjectRepository.save(professorGroupSubject);
+    professorGroupSubjectService.save(professorGroupSubject);
 
     Enrollment enrollment = Enrollment.builder()
       .groupSubject(professorGroupSubject)
@@ -54,6 +56,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
   }
 
   @Override
+  @Transactional
   public Enrollment enrollAndJoinGroup(Long subjectId, Long groupId) {
     User currentUser = validateAndGetUser();
     Subject subject = validateAndGetSubject(subjectId);
@@ -61,12 +64,17 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
     Professor professor = currentUser.getProfessor();
 
-    ProfessorGroupSubject professorGroupSubject = professorGroupSubjectRepository.findById(groupId).orElseThrow(() -> new ProfessorGroupSubjectNotFoundException(groupId));
-    if (professorGroupSubjectRepository.existsBySubjectAndMembersContains(subject, professor)) {
+    ProfessorGroupSubject professorGroupSubject = professorGroupSubjectService.findById(groupId);
+
+    if (!professorGroupSubject.getSubject().getId().equals(subjectId)) {
+      throw new GroupDoesntBelongToSubjectException(groupId, subjectId);
+    }
+
+    if (professorGroupSubjectService.existsBySubjectAndMembersContains(subject)) {
       throw new ProfessorAlreadyInGroupException(currentUser.getId(), subjectId);
     }
     professorGroupSubject.addProfessor(professor);
-    professorGroupSubjectRepository.save(professorGroupSubject);
+    professorGroupSubjectService.save(professorGroupSubject);
 
     Enrollment enrollment = Enrollment.builder()
       .groupSubject(professorGroupSubject)
@@ -90,9 +98,9 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     professorGroupSubject.removeProfessor(professor);
 
     if (professorGroupSubject.getMembers().isEmpty()) {
-      professorGroupSubjectRepository.delete(professorGroupSubject);
+      professorGroupSubjectService.deleteById(professorGroupSubject.getId());
     } else {
-      professorGroupSubjectRepository.save(professorGroupSubject);
+      professorGroupSubjectService.save(professorGroupSubject);
     }
   }
 
@@ -110,8 +118,8 @@ public class EnrollmentServiceImpl implements EnrollmentService {
   }
 
   private void validateNotAlreadyEnrolled(User user, Subject subject) {
-    if (enrollmentRepository.existsByUserIdAndGroupSubjectId(user.getId(), subject.getId())) {
-      throw new UserAlreadyEnrolledException("User is already enrolled in this subject");
+    if (enrollmentRepository.existsByUserIdAndGroupSubject_SubjectId(user.getId(), subject.getId())) {
+      throw new UserAlreadyEnrolledException(user.getId(), subject.getId());
     }
   }
 }
