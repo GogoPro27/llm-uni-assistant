@@ -16,8 +16,12 @@ import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Builder.Default;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -25,10 +29,13 @@ import java.util.List;
 
 @Entity
 @Table(name = "chat_sessions")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@EqualsAndHashCode(exclude = {"enrollment", "messages"})
+@ToString(exclude = {"enrollment", "messages"})
 public class ChatSession {
 
   @Id
@@ -44,6 +51,7 @@ public class ChatSession {
   private Enrollment enrollment;
 
   @OneToMany(mappedBy = "session", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+  @Default
   private List<ChatMessage> messages = new ArrayList<>();
 
   @Column(name = "title")

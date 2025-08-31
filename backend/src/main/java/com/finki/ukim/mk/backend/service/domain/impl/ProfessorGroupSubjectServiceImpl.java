@@ -12,11 +12,9 @@ import com.finki.ukim.mk.backend.service.domain.AuthenticationService;
 import com.finki.ukim.mk.backend.service.domain.ProfessorGroupSubjectService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class ProfessorGroupSubjectServiceImpl implements ProfessorGroupSubjectService {
   private final ProfessorGroupSubjectRepository professorGroupSubjectRepository;
   private final AuthenticationService authenticationService;
@@ -27,13 +25,11 @@ public class ProfessorGroupSubjectServiceImpl implements ProfessorGroupSubjectSe
   }
 
   @Override
-  @Transactional
   public ProfessorGroupSubject save(ProfessorGroupSubject group) {
     return professorGroupSubjectRepository.save(group);
   }
 
   @Override
-  @Transactional
   public void deleteById(Long id) {
     if (!professorGroupSubjectRepository.existsById(id)) {
       throw new ProfessorGroupSubjectNotFoundException(id);
@@ -48,7 +44,6 @@ public class ProfessorGroupSubjectServiceImpl implements ProfessorGroupSubjectSe
   }
 
   @Override
-  @Transactional
   public ProfessorGroupSubject changeGroupForSubject(Long subjectId, Long newGroupId) {
     Professor professor = validateAndGetCurrentProfessor();
 

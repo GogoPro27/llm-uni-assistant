@@ -18,8 +18,11 @@ import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Builder.Default;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -28,10 +31,13 @@ import java.util.Set;
 
 @Entity
 @Table(name = "users")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@EqualsAndHashCode(exclude = {"student", "professor", "enrollments"})
+@ToString(exclude = {"student", "professor", "enrollments"})
 public class User {
 
   @Id
@@ -65,6 +71,7 @@ public class User {
   private Professor professor;
 
   @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+  @Default
   private List<Enrollment> enrollments = new ArrayList<>();
 
   public boolean isStudent() {

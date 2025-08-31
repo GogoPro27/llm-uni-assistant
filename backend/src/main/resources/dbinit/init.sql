@@ -91,6 +91,11 @@ CREATE TABLE llm_resources
 
 CREATE TYPE message_origin AS ENUM ('user', 'assistant');
 
+-- Create cast functions to allow automatic VARCHAR to enum conversion
+CREATE CAST (varchar AS user_role) WITH INOUT AS IMPLICIT;
+CREATE CAST (varchar AS resource_kind) WITH INOUT AS IMPLICIT;
+CREATE CAST (varchar AS message_origin) WITH INOUT AS IMPLICIT;
+
 CREATE TABLE chat_sessions
 (
     session_id       BIGSERIAL PRIMARY KEY,

@@ -10,18 +10,24 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 @Table(name = "subjects")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@EqualsAndHashCode(exclude = {"groupSubjects"})
+@ToString(exclude = {"groupSubjects"})
 public class Subject {
 
   @Id
@@ -39,5 +45,6 @@ public class Subject {
   private String code;
 
   @OneToMany(mappedBy = "subject", orphanRemoval = true, cascade = CascadeType.ALL)
+  @Builder.Default
   private List<ProfessorGroupSubject> groupSubjects = new ArrayList<>();
 }

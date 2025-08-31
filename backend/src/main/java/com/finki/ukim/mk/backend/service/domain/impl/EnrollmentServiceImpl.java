@@ -1,6 +1,7 @@
 package com.finki.ukim.mk.backend.service.domain.impl;
 
 import com.finki.ukim.mk.backend.database.model.Enrollment;
+import com.finki.ukim.mk.backend.database.model.EnrollmentId;
 import com.finki.ukim.mk.backend.database.model.Professor;
 import com.finki.ukim.mk.backend.database.model.ProfessorGroupSubject;
 import com.finki.ukim.mk.backend.database.model.Subject;
@@ -18,14 +19,12 @@ import com.finki.ukim.mk.backend.service.domain.EnrollmentService;
 import com.finki.ukim.mk.backend.service.domain.ProfessorGroupSubjectService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
 import java.util.HashSet;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class EnrollmentServiceImpl implements EnrollmentService {
   private final EnrollmentRepository enrollmentRepository;
   private final ProfessorGroupSubjectService professorGroupSubjectService;
@@ -33,7 +32,6 @@ public class EnrollmentServiceImpl implements EnrollmentService {
   private final AuthenticationService authenticationService;
 
   @Override
-  @Transactional
   public Enrollment enrollAndCreateGroup(Long subjectId) {
     User currentUser = validateAndGetUser();
     Subject subject = validateAndGetSubject(subjectId);
@@ -48,7 +46,9 @@ public class EnrollmentServiceImpl implements EnrollmentService {
       .build();
     professorGroupSubjectService.save(professorGroupSubject);
 
+    EnrollmentId enrollmentId = new EnrollmentId(currentUser.getId(), professorGroupSubject.getId());
     Enrollment enrollment = Enrollment.builder()
+      .id(enrollmentId)
       .groupSubject(professorGroupSubject)
       .user(currentUser)
       .build();
@@ -56,7 +56,6 @@ public class EnrollmentServiceImpl implements EnrollmentService {
   }
 
   @Override
-  @Transactional
   public Enrollment enrollAndJoinGroup(Long subjectId, Long groupId) {
     User currentUser = validateAndGetUser();
     Subject subject = validateAndGetSubject(subjectId);
@@ -76,7 +75,9 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     professorGroupSubject.addProfessor(professor);
     professorGroupSubjectService.save(professorGroupSubject);
 
+    EnrollmentId enrollmentId = new EnrollmentId(currentUser.getId(), professorGroupSubject.getId());
     Enrollment enrollment = Enrollment.builder()
+      .id(enrollmentId)
       .groupSubject(professorGroupSubject)
       .user(currentUser)
       .build();
@@ -84,7 +85,6 @@ public class EnrollmentServiceImpl implements EnrollmentService {
   }
 
   @Override
-  @Transactional
   public void unenroll(Long subjectId) {
     User currentUser = validateAndGetUser();
 

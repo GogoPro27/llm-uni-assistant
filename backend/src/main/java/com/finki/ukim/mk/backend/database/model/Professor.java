@@ -10,8 +10,10 @@ import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.ToString;
 
 import java.util.HashSet;
@@ -19,10 +21,13 @@ import java.util.Set;
 
 @Entity
 @Table(name = "professors")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@EqualsAndHashCode(exclude = {"user", "groupSubjects"})
+@ToString(exclude = {"user", "groupSubjects"})
 public class Professor {
 
   @Id
@@ -32,13 +37,12 @@ public class Professor {
   @OneToOne
   @MapsId
   @JoinColumn(name = "professor_id")
-  @ToString.Exclude
   private User user;
 
   @Column(name = "short_name", nullable = false)
   private String shortName;
 
   @ManyToMany(mappedBy = "members")
-  @ToString.Exclude
+  @Builder.Default
   private Set<ProfessorGroupSubject> groupSubjects = new HashSet<>();
 }

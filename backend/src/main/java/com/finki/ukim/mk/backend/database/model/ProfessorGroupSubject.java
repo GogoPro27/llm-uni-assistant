@@ -16,8 +16,10 @@ import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Builder.Default;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.ToString;
 
 import java.util.ArrayList;
@@ -28,10 +30,13 @@ import java.util.stream.Collectors;
 
 @Entity
 @Table(name = "professor_group_subjects")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@EqualsAndHashCode(exclude = {"subject", "members", "llmControl", "llmResources", "enrollments"})
+@ToString(exclude = {"subject", "members", "llmControl", "llmResources", "enrollments"})
 public class ProfessorGroupSubject {
 
   @Id
@@ -52,21 +57,18 @@ public class ProfessorGroupSubject {
     joinColumns = @JoinColumn(name = "group_subject_id"),
     inverseJoinColumns = @JoinColumn(name = "professor_id")
   )
-  @ToString.Exclude
   @Default
   private Set<Professor> members = new HashSet<>();
 
   @OneToOne(mappedBy = "groupSubject", cascade = CascadeType.ALL, orphanRemoval = true)
-  @ToString.Exclude
   private LlmControl llmControl;
 
   @OneToMany(mappedBy = "groupSubject", cascade = CascadeType.ALL, orphanRemoval = true)
-  @ToString.Exclude
   @Default
   private Set<LlmResource> llmResources = new HashSet<>();
 
   @OneToMany(mappedBy = "groupSubject", cascade = CascadeType.ALL, orphanRemoval = true)
-  @ToString.Exclude
+  @Default
   private List<Enrollment> enrollments = new ArrayList<>();
 
   public void addProfessor(Professor professor) {

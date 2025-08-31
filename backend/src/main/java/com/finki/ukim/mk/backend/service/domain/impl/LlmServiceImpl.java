@@ -16,14 +16,13 @@ import org.springframework.ai.chat.prompt.ChatOptions;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class LlmServiceImpl implements LlmService {
   @Value("${llm.system-prompt}")
   private String systemPrompt;
@@ -42,11 +41,18 @@ public class LlmServiceImpl implements LlmService {
     List<ChatMessage> messages = chatMessageRepository.findBySessionOrderByCreatedAtAsc(session);
     List<ChatMessage> lastMessages = truncateMessagesToMemorySize(messages);
 
-    List<Message> messagesToSend = lastMessages.stream().map(chatMessageMapper::to).toList();
-    SystemMessage systemMessage = new SystemMessage(systemPrompt);
-    messagesToSend.addFirst(systemMessage);
+    List<Message> messagesToSend = lastMessages.stream().map(chatMessageMapper::to).collect(Collectors.toList());
 
     LlmControl llmControl = message.getSession().getEnrollment().getGroupSubject().getLlmControl();
+
+    if (llmControl != null && llmControl.getInstructions() != null) {
+      SystemMessage systemMessage = new SystemMessage(llmControl.getInstructions());
+      messagesToSend.addFirst(systemMessage);
+    } else {
+      SystemMessage systemMessage = new SystemMessage(systemPrompt);
+      messagesToSend.addFirst(systemMessage);
+    }
+
     ChatOptions options = createOptionsAtRuntime(llmControl);
 
     Prompt prompt = new Prompt(messagesToSend, options);

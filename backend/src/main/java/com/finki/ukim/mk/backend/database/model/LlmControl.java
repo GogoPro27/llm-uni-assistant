@@ -10,15 +10,23 @@ import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Builder.Default;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "llm_controls")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@EqualsAndHashCode(exclude = {"groupSubject"})
+@ToString(exclude = {"groupSubject"})
 public class LlmControl {
 
   @Id
@@ -40,6 +48,7 @@ public class LlmControl {
   private String instructions;
 
   @Column(name = "params", columnDefinition = "jsonb")
+  @JdbcTypeCode(SqlTypes.JSON)
   @Default
   private String params = "{}";
 }
