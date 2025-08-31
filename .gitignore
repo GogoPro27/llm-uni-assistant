@@ -1,0 +1,14 @@
+# IntelliJ IDEA project files
+.idea/
+*.iml
+*.iws
+
+# User-specific stuff
+*.swp
+*.swo
+
+# Mac system files
+.DS_Store
+
+# Windows system files
+Thumbs.db
