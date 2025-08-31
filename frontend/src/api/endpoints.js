@@ -58,6 +58,9 @@ export const professorGroupSubjectAPI = {
 
   changeGroupForSubject: (subjectId, newGroupId) =>
     httpClient.put(`/api/professor-group-subjects/subjects/${subjectId}/change-group/${newGroupId}`),
+
+  getEnrolledSubjects: () =>
+    httpClient.get('/api/professor-group-subjects/enrolled-subjects'),
 };
 
 export const API = {

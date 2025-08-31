@@ -1,6 +1,7 @@
 package com.finki.ukim.mk.backend.controller.application;
 
 import com.finki.ukim.mk.backend.dto.ProfessorGroupSubjectDto;
+import com.finki.ukim.mk.backend.dto.SubjectLightDto;
 import com.finki.ukim.mk.backend.service.application.ProfessorGroupSubjectApplicationService;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -13,6 +14,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/professor-group-subjects")
@@ -42,5 +45,11 @@ public class ProfessorGroupSubjectController {
     ProfessorGroupSubjectDto updated =
         professorGroupSubjectApplicationService.changeGroupForSubject(subjectId, newGroupId);
     return ResponseEntity.ok(updated);
+  }
+
+  @GetMapping("/enrolled-subjects")
+  public ResponseEntity<List<SubjectLightDto>> getEnrolledSubjects() {
+    List<SubjectLightDto> enrolledSubjects = professorGroupSubjectApplicationService.getEnrolledSubjects();
+    return ResponseEntity.ok(enrolledSubjects);
   }
 }

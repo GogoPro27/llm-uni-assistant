@@ -1,5 +1,6 @@
 package com.finki.ukim.mk.backend.service.domain.impl;
 
+import com.finki.ukim.mk.backend.database.model.Enrollment;
 import com.finki.ukim.mk.backend.database.model.Professor;
 import com.finki.ukim.mk.backend.database.model.ProfessorGroupSubject;
 import com.finki.ukim.mk.backend.database.model.Subject;
@@ -12,6 +13,8 @@ import com.finki.ukim.mk.backend.service.domain.AuthenticationService;
 import com.finki.ukim.mk.backend.service.domain.ProfessorGroupSubjectService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -68,6 +71,17 @@ public class ProfessorGroupSubjectServiceImpl implements ProfessorGroupSubjectSe
       professorGroupSubjectRepository.save(previousProfessorGroupSubject);
     }
     return professorGroupSubjectRepository.save(professorGroupSubject);
+  }
+
+  @Override
+  public List<Subject> getEnrolledSubjects() {
+    User user = authenticationService.getCurrentUser();
+
+    return user.getEnrollments()
+      .stream()
+      .map(Enrollment::getGroupSubject)
+      .map(ProfessorGroupSubject::getSubject)
+      .toList();
   }
 
   private Professor validateAndGetCurrentProfessor() {
