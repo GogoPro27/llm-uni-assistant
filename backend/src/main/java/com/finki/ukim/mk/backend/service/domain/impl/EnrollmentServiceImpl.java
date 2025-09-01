@@ -41,9 +41,10 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
     ProfessorGroupSubject professorGroupSubject = ProfessorGroupSubject.builder()
       .subject(subject)
-      .shortName(currentProfessor.getShortName())
       .members(new HashSet<>(Collections.singletonList(currentProfessor)))
       .build();
+
+    professorGroupSubject.addProfessor(currentProfessor);
     professorGroupSubjectService.save(professorGroupSubject);
 
     EnrollmentId enrollmentId = new EnrollmentId(currentUser.getId(), professorGroupSubject.getId());

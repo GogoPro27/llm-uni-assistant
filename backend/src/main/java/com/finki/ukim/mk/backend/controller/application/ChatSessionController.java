@@ -2,6 +2,7 @@ package com.finki.ukim.mk.backend.controller.application;
 
 import com.finki.ukim.mk.backend.dto.ChatMessageDto;
 import com.finki.ukim.mk.backend.dto.ChatMessageRequestDto;
+import com.finki.ukim.mk.backend.dto.ChatSessionLightDto;
 import com.finki.ukim.mk.backend.dto.ChatSessionWithMessagesDto;
 import com.finki.ukim.mk.backend.service.application.ChatSessionApplicationService;
 import jakarta.validation.Valid;
@@ -18,6 +19,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/chat-sessions")
@@ -51,5 +54,12 @@ public class ChatSessionController {
       @PathVariable("sessionId") @NotNull @Positive Long sessionId) {
     chatSessionApplicationService.deleteSession(sessionId);
     return ResponseEntity.noContent().build();
+  }
+
+  @GetMapping("/subjects/{subjectId}")
+  public ResponseEntity<List<ChatSessionLightDto>> getSessionsBySubjectId(
+      @PathVariable("subjectId") @NotNull @Positive Long subjectId) {
+    List<ChatSessionLightDto> sessions = chatSessionApplicationService.getSessionsBySubjectId(subjectId);
+    return ResponseEntity.ok(sessions);
   }
 }

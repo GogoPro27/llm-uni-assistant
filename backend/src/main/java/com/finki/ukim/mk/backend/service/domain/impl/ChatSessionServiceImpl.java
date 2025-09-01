@@ -15,6 +15,9 @@ import com.finki.ukim.mk.backend.service.domain.LlmService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.OffsetDateTime;
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class ChatSessionServiceImpl implements ChatSessionService {
@@ -53,9 +56,15 @@ public class ChatSessionServiceImpl implements ChatSessionService {
   public ChatMessage sendMessageInSession(ChatMessage message) {
     chatMessageService.save(message);
     ChatSession session = message.getSession();
-    if(session.getMessages().isEmpty()) {
-      session.setTitle(message.getContent().substring(0, 10));
+    if (session.getMessages().size() == 1) {
+      session.setTitle(message.getContent().length() > 10
+        ? message.getContent().substring(0, 10) + "..."
+        : message.getContent());
     }
+
+    session.setUpdatedAt(OffsetDateTime.now());
+    chatSessionRepository.save(session);
+
     ChatMessage receivedMessage = llmService.sendMessage(message);
     return chatMessageService.save(receivedMessage);
   }
@@ -68,5 +77,12 @@ public class ChatSessionServiceImpl implements ChatSessionService {
   @Override
   public ChatSession getSessionById(Long sessionId) {
     return chatSessionRepository.findById(sessionId).orElseThrow(() -> new ChatSessionNotFoundException(sessionId));
+  }
+
+  @Override
+  public List<ChatSession> getSessionsBySubjectId(Long subjectId) {
+    User user = authenticationService.getCurrentUser();
+    Enrollment enrollment = enrollmentRepository.findByUserIdAndSubjectId(user.getId(), subjectId).orElseThrow(() -> new UserNotAssociatedWithSubjectException(subjectId));
+    return enrollment.getChatSessions();
   }
 }

@@ -12,8 +12,13 @@ public class ChatMessageDto {
   private String message;
   private Long sessionId;
   private OffsetDateTime timeStamp;
+  private String origin;
 
   public static ChatMessageDto fromChatMessage(ChatMessage message) {
-    return new ChatMessageDto(message.getContent(), message.getSession().getId(), message.getCreatedAt());
+    return new ChatMessageDto(
+      message.getContent(),
+      message.getSession().getId(),
+      message.getCreatedAt(),
+      message.getOrigin().name());
   }
 }

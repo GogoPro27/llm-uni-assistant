@@ -14,6 +14,9 @@ export const chatSessionAPI = {
   getSession: (sessionId) =>
     httpClient.get(`/api/chat-sessions/${sessionId}`),
 
+  getSessionsBySubjectId: (subjectId) =>
+    httpClient.get(`/api/chat-sessions/subjects/${subjectId}`),
+
   sendMessage: (messageData) =>
     httpClient.post('/api/chat-sessions/messages', messageData),
 

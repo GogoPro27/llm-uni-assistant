@@ -28,7 +28,7 @@ const Login = () => {
         API.auth.login(formData)
             .then((response) => {
                 console.log("The user has logged in successfully!");
-                login(response.token);
+                login(response);
                 setFormData(initialFormData);
                 navigate("/chatbot", {replace: true});
             })

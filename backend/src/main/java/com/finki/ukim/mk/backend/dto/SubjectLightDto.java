@@ -7,8 +7,8 @@ import lombok.Data;
 @Data
 @AllArgsConstructor
 public class SubjectLightDto {
-  private Long subjectId;
-  private String subjectShortName;
+  private Long id;
+  private String shortName;
 
   public static SubjectLightDto fromSubject(Subject subject) {
     return new SubjectLightDto(

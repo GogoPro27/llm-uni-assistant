@@ -23,15 +23,22 @@ const AuthProvider = ({children}) => {
     const [state, setState] = useState({
         user: null,
         isLoading: true,
+        fullName: null, // Add fullName to the state
     });
 
-    const login = (jwtToken) => {
-        const payload = decode(jwtToken);
-        if (payload) {
-            authService.setToken(jwtToken);
+    const login = (loginResponse) => {
+        const jwtPayload = decode(loginResponse.token);
+        if (jwtPayload) {
+            console.log('Login successful:', loginResponse);
+            authService.setToken(loginResponse.token);
+            const fullName = [loginResponse.name, loginResponse.surname].filter(Boolean).join(' ');
+            if (fullName) {
+                localStorage.setItem('userFullName', fullName);
+            }
             setState({
-                user: payload,
+                user: jwtPayload,
                 isLoading: false,
+                fullName,
             });
         } else {
             logout();
@@ -40,9 +47,11 @@ const AuthProvider = ({children}) => {
 
     const logout = () => {
         authService.removeToken();
+        localStorage.removeItem('userFullName');
         setState({
             user: null,
             isLoading: false,
+            fullName: null,
         });
     }
 
@@ -51,9 +60,14 @@ const AuthProvider = ({children}) => {
         if (jwtToken) {
             const payload = decode(jwtToken);
             if (payload) {
+                const fullName = [payload.name, payload.surname].filter(Boolean).join(' ');
+                if (fullName) {
+                    localStorage.setItem('userFullName', fullName);
+                }
                 setState({
                     user: payload,
                     isLoading: false,
+                    fullName,
                 });
             } else {
                 logout();
@@ -62,6 +76,7 @@ const AuthProvider = ({children}) => {
             setState({
                 user: null,
                 isLoading: false,
+                fullName: null,
             });
         }
     }, []);
