@@ -7,9 +7,10 @@ import java.util.List;
 
 public interface ProfessorGroupSubjectService {
   ProfessorGroupSubject findById(Long id);
-  ProfessorGroupSubject save(ProfessorGroupSubject group);
+  void save(ProfessorGroupSubject group);
   void deleteById(Long id);
   Boolean existsBySubjectAndMembersContains(Subject subject);
   ProfessorGroupSubject changeGroupForSubject(Long subjectId, Long newGroupId);
   List<Subject> getEnrolledSubjects();
+  List<ProfessorGroupSubject> getAllGroupsBySubjectId(Long subjectId);
 }

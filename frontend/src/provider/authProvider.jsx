@@ -19,11 +19,11 @@ const decode = (token) => {
 };
 
 const AuthProvider = ({children}) => {
-
     const [state, setState] = useState({
         user: null,
         isLoading: true,
-        fullName: null, // Add fullName to the state
+        fullName: null,
+        roles: [], // Add roles to the state
     });
 
     const login = (loginResponse) => {
@@ -31,14 +31,20 @@ const AuthProvider = ({children}) => {
         if (jwtPayload) {
             console.log('Login successful:', loginResponse);
             authService.setToken(loginResponse.token);
+
             const fullName = [loginResponse.name, loginResponse.surname].filter(Boolean).join(' ');
             if (fullName) {
                 localStorage.setItem('userFullName', fullName);
             }
+
+            const roles = loginResponse.roles || []; // Extract roles from the login response
+            localStorage.setItem('userRoles', JSON.stringify(roles)); // Store roles in localStorage
+
             setState({
                 user: jwtPayload,
                 isLoading: false,
                 fullName,
+                roles, // Update roles in the state
             });
         } else {
             logout();
@@ -48,12 +54,14 @@ const AuthProvider = ({children}) => {
     const logout = () => {
         authService.removeToken();
         localStorage.removeItem('userFullName');
+        localStorage.removeItem('userRoles'); // Remove roles from localStorage
         setState({
             user: null,
             isLoading: false,
             fullName: null,
+            roles: [], // Clear roles in the state
         });
-    }
+    };
 
     useEffect(() => {
         const jwtToken = authService.getToken();
@@ -64,10 +72,13 @@ const AuthProvider = ({children}) => {
                 if (fullName) {
                     localStorage.setItem('userFullName', fullName);
                 }
+
+                const roles = JSON.parse(localStorage.getItem('userRoles')) || []; // Retrieve roles from localStorage
                 setState({
                     user: payload,
                     isLoading: false,
                     fullName,
+                    roles, // Set roles in the state
                 });
             } else {
                 logout();
@@ -77,6 +88,7 @@ const AuthProvider = ({children}) => {
                 user: null,
                 isLoading: false,
                 fullName: null,
+                roles: [],
             });
         }
     }, []);

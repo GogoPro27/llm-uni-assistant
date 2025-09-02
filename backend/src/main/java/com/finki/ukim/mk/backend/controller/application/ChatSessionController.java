@@ -2,8 +2,8 @@ package com.finki.ukim.mk.backend.controller.application;
 
 import com.finki.ukim.mk.backend.dto.ChatMessageDto;
 import com.finki.ukim.mk.backend.dto.ChatMessageRequestDto;
-import com.finki.ukim.mk.backend.dto.ChatSessionLightDto;
 import com.finki.ukim.mk.backend.dto.ChatSessionWithMessagesDto;
+import com.finki.ukim.mk.backend.dto.light.ChatSessionLightDto;
 import com.finki.ukim.mk.backend.service.application.ChatSessionApplicationService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -32,14 +32,14 @@ public class ChatSessionController {
 
   @PostMapping("/subjects/{subjectId}/open")
   public ResponseEntity<ChatSessionWithMessagesDto> openSession(
-      @PathVariable("subjectId") @NotNull @Positive Long subjectId) {
+    @PathVariable("subjectId") @NotNull @Positive Long subjectId) {
     ChatSessionWithMessagesDto session = chatSessionApplicationService.openSession(subjectId);
     return ResponseEntity.status(HttpStatus.CREATED).body(session);
   }
 
   @GetMapping("/{sessionId}")
   public ResponseEntity<ChatSessionWithMessagesDto> getSession(
-      @PathVariable("sessionId") @NotNull @Positive Long sessionId) {
+    @PathVariable("sessionId") @NotNull @Positive Long sessionId) {
     return ResponseEntity.ok(chatSessionApplicationService.getSessionWithMessagesById(sessionId));
   }
 
@@ -51,14 +51,14 @@ public class ChatSessionController {
 
   @DeleteMapping("/{sessionId}")
   public ResponseEntity<Void> deleteSession(
-      @PathVariable("sessionId") @NotNull @Positive Long sessionId) {
+    @PathVariable("sessionId") @NotNull @Positive Long sessionId) {
     chatSessionApplicationService.deleteSession(sessionId);
     return ResponseEntity.noContent().build();
   }
 
   @GetMapping("/subjects/{subjectId}")
   public ResponseEntity<List<ChatSessionLightDto>> getSessionsBySubjectId(
-      @PathVariable("subjectId") @NotNull @Positive Long subjectId) {
+    @PathVariable("subjectId") @NotNull @Positive Long subjectId) {
     List<ChatSessionLightDto> sessions = chatSessionApplicationService.getSessionsBySubjectId(subjectId);
     return ResponseEntity.ok(sessions);
   }

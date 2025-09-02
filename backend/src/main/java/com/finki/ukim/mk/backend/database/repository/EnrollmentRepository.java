@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -16,4 +17,5 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Enrollme
   Optional<Enrollment> findByUserIdAndSubjectId(@Param("userId") Long userId, @Param("subjectId") Long subjectId);
 
   Boolean existsByUserIdAndGroupSubject_SubjectId(Long userId, Long groupSubjectId);
+  List<Enrollment> findByUserId(Long userId);
 }

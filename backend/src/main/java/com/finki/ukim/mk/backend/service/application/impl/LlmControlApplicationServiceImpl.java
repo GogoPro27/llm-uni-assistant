@@ -1,12 +1,9 @@
 package com.finki.ukim.mk.backend.service.application.impl;
 
 import com.finki.ukim.mk.backend.database.model.LlmControl;
-import com.finki.ukim.mk.backend.database.model.ProfessorGroupSubject;
-import com.finki.ukim.mk.backend.dto.CreateLlmControlDto;
 import com.finki.ukim.mk.backend.dto.LlmControlDto;
 import com.finki.ukim.mk.backend.service.application.LlmControlApplicationService;
 import com.finki.ukim.mk.backend.service.domain.LlmControlService;
-import com.finki.ukim.mk.backend.service.domain.ProfessorGroupSubjectService;
 import com.finki.ukim.mk.backend.util.LlmParametersUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -16,18 +13,10 @@ import org.springframework.stereotype.Service;
 public class LlmControlApplicationServiceImpl implements LlmControlApplicationService {
 
   private final LlmControlService llmControlService;
-  private final ProfessorGroupSubjectService professorGroupSubjectService;
 
   @Override
   public LlmControlDto getLlmControlByGroupSubject(Long professorGroupSubjectId) {
     LlmControl llmControl = llmControlService.getLlmControlByGroupSubject(professorGroupSubjectId);
-    return LlmControlDto.fromLlmControl(llmControl);
-  }
-
-  @Override
-  public LlmControlDto saveLlmControl(CreateLlmControlDto newLlmControl) {
-    ProfessorGroupSubject professorGroupSubject = professorGroupSubjectService.findById(newLlmControl.getProfessorGroupSubjectId());
-    LlmControl llmControl = llmControlService.saveLlmControl(newLlmControl.toLlmControl(professorGroupSubject));
     return LlmControlDto.fromLlmControl(llmControl);
   }
 

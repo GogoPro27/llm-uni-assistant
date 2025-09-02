@@ -9,7 +9,6 @@ import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Builder.Default;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -38,17 +37,20 @@ public class LlmControl {
   @JoinColumn(name = "group_subject_id")
   private ProfessorGroupSubject groupSubject;
 
-  @Column(name = "model_name")
-  private String modelName;
+  @Builder.Default
+  @Column(name = "model_name", nullable = false)
+  private String modelName = "gpt-4o";
 
-  @Column(name = "llm_provider")
-  private String llmProvider;
+  @Builder.Default
+  @Column(name = "llm_provider", nullable = false)
+  private String llmProvider = "openai";
 
+  @Builder.Default
   @Column(name = "instructions")
-  private String instructions;
+  private String instructions = "";
 
-  @Column(name = "params", columnDefinition = "jsonb")
+  @Builder.Default
+  @Column(name = "params", columnDefinition = "jsonb", nullable = false)
   @JdbcTypeCode(SqlTypes.JSON)
-  @Default
   private String params = "{}";
 }

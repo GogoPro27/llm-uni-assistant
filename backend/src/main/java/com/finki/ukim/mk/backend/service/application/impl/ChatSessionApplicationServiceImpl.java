@@ -4,7 +4,7 @@ import com.finki.ukim.mk.backend.database.model.ChatMessage;
 import com.finki.ukim.mk.backend.database.model.ChatSession;
 import com.finki.ukim.mk.backend.dto.ChatMessageDto;
 import com.finki.ukim.mk.backend.dto.ChatMessageRequestDto;
-import com.finki.ukim.mk.backend.dto.ChatSessionLightDto;
+import com.finki.ukim.mk.backend.dto.light.ChatSessionLightDto;
 import com.finki.ukim.mk.backend.dto.ChatSessionWithMessagesDto;
 import com.finki.ukim.mk.backend.service.application.ChatSessionApplicationService;
 import com.finki.ukim.mk.backend.service.domain.ChatSessionService;

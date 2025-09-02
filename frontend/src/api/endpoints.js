@@ -34,15 +34,18 @@ export const enrollmentAPI = {
 
   unenroll: (subjectId) =>
     httpClient.delete(`/api/enrollments/subjects/${subjectId}`),
+
+  getEnrolledSubjects: () =>
+    httpClient.get('/api/enrollments'),
+
+  getSubjectsNotEnrolled: () =>
+    httpClient.get('/api/enrollments/subjects/not-enrolled'), // New endpoint
 };
 
 // LLM Control endpoints
 export const llmControlAPI = {
   getByProfessorGroupSubject: (professorGroupSubjectId) =>
     httpClient.get(`/api/llm-controls/professor-group-subject/${professorGroupSubjectId}`),
-
-  create: (llmControlData) =>
-    httpClient.post('/api/llm-controls', llmControlData),
 
   update: (llmControlData) =>
     httpClient.put('/api/llm-controls', llmControlData),
@@ -64,6 +67,9 @@ export const professorGroupSubjectAPI = {
 
   getEnrolledSubjects: () =>
     httpClient.get('/api/professor-group-subjects/enrolled-subjects'),
+
+  getAllGroupsBySubjectId: (subjectId) =>
+    httpClient.get(`/api/professor-group-subjects/subjects/${subjectId}/groups`),
 };
 
 export const API = {

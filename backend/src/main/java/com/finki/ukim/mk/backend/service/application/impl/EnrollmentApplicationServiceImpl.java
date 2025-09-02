@@ -2,10 +2,14 @@ package com.finki.ukim.mk.backend.service.application.impl;
 
 import com.finki.ukim.mk.backend.database.model.Enrollment;
 import com.finki.ukim.mk.backend.dto.EnrollmentProfessorGroupDetailsDto;
+import com.finki.ukim.mk.backend.dto.light.EnrollmentLightDto;
+import com.finki.ukim.mk.backend.dto.light.SubjectLightDto;
 import com.finki.ukim.mk.backend.service.application.EnrollmentApplicationService;
 import com.finki.ukim.mk.backend.service.domain.EnrollmentService;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 @AllArgsConstructor
@@ -28,5 +32,19 @@ public class EnrollmentApplicationServiceImpl implements EnrollmentApplicationSe
   @Override
   public void unenroll(Long subjectId) {
     enrollmentService.unenroll(subjectId);
+  }
+
+  @Override
+  public List<EnrollmentLightDto> getEnrolledSubjects() {
+    return enrollmentService.getAllEnrollments().stream()
+      .map(EnrollmentLightDto::fromEnrollment)
+      .toList();
+  }
+
+  @Override
+  public List<SubjectLightDto> getSubjectsNotEnrolled() {
+    return enrollmentService.getSubjectsNotEnrolled().stream()
+      .map(SubjectLightDto::fromSubject)
+      .toList();
   }
 }

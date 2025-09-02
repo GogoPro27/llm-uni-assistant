@@ -1,9 +1,11 @@
-import React, { useState, useContext, useEffect, useRef } from 'react';
+import React, {useContext, useEffect, useRef, useState} from 'react';
+import {useNavigate} from 'react-router-dom';
 import logo from '../../../assets/finkilogo.jpg';
 import AuthContext from '../../../contexts/authContext.js';
 
 function Navbar() {
-    const { logout } = useContext(AuthContext);
+    const navigate = useNavigate();
+    const {logout} = useContext(AuthContext);
     const fullName = localStorage.getItem('userFullName') || '';
     const initials = fullName
         ? fullName.split(' ').map(n => n[0]).join('').toUpperCase()
@@ -37,9 +39,10 @@ function Navbar() {
     }, []);
 
     return (
-        <header className="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 relative">
-            <div className="flex items-center gap-3">
-                <img src={logo} alt="Logo" className="h-8 w-auto" />
+        <header
+            className="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 relative">
+            <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/')}>
+                <img src={logo} alt="Logo" className="h-8 w-auto"/>
             </div>
             <div className="relative flex items-center gap-2 ml-auto">
                 {showUser ? (
@@ -63,7 +66,10 @@ function Navbar() {
                                 </button>
                                 <button
                                     className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
-                                    onClick={() => setDropdownOpen(false)}
+                                    onClick={() => {
+                                        setDropdownOpen(false);
+                                        navigate('/enrollments'); // Navigate to EnrollmentsPage
+                                    }}
                                 >
                                     My Enrollments
                                 </button>

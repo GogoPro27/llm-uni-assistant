@@ -3,6 +3,8 @@ import {BrowserRouter, Navigate, Route, Routes} from "react-router-dom";
 import Login from "./ui/components/auth/Login.jsx";
 import ProtectedRoute from "./ui/components/routing/ProtectedRoute.jsx";
 import ChatBotPage from "./ui/pages/ChatBotPage.jsx";
+import EnrollmentsPage from "./ui/pages/EnrollmentsPage.jsx";
+import EnrollmentDetailsPage from "./ui/components/enrollment/EnrollmentDetailsPage.jsx";
 
 function App() {
     return (
@@ -12,6 +14,8 @@ function App() {
                 <Route path="/" element={<ProtectedRoute/>}>
                     <Route index element={<Navigate to="/chatbot" replace/>}/>
                     <Route path="chatbot" element={<ChatBotPage/>}/>
+                    <Route path="enrollments" element={<EnrollmentsPage/>}/>
+                    <Route path="enrollments/:professorGroupId" element={<EnrollmentDetailsPage/>}/>
                 </Route>
             </Routes>
         </BrowserRouter>

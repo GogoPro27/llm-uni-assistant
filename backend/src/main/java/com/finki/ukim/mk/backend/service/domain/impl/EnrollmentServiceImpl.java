@@ -2,6 +2,7 @@ package com.finki.ukim.mk.backend.service.domain.impl;
 
 import com.finki.ukim.mk.backend.database.model.Enrollment;
 import com.finki.ukim.mk.backend.database.model.EnrollmentId;
+import com.finki.ukim.mk.backend.database.model.LlmControl;
 import com.finki.ukim.mk.backend.database.model.Professor;
 import com.finki.ukim.mk.backend.database.model.ProfessorGroupSubject;
 import com.finki.ukim.mk.backend.database.model.Subject;
@@ -16,12 +17,14 @@ import com.finki.ukim.mk.backend.exception.UserAlreadyEnrolledException;
 import com.finki.ukim.mk.backend.exception.UserNotEnrolledException;
 import com.finki.ukim.mk.backend.service.domain.AuthenticationService;
 import com.finki.ukim.mk.backend.service.domain.EnrollmentService;
+import com.finki.ukim.mk.backend.service.domain.LlmControlService;
 import com.finki.ukim.mk.backend.service.domain.ProfessorGroupSubjectService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -30,6 +33,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
   private final ProfessorGroupSubjectService professorGroupSubjectService;
   private final SubjectRepository subjectRepository;
   private final AuthenticationService authenticationService;
+  private final LlmControlService llmControlService;
 
   @Override
   public Enrollment enrollAndCreateGroup(Long subjectId) {
@@ -45,6 +49,11 @@ public class EnrollmentServiceImpl implements EnrollmentService {
       .build();
 
     professorGroupSubject.addProfessor(currentProfessor);
+
+    LlmControl llmControl = LlmControl.builder().groupSubject(professorGroupSubject).build();
+    professorGroupSubject.setLlmControl(llmControl);
+
+    llmControlService.saveLlmControl(llmControl);
     professorGroupSubjectService.save(professorGroupSubject);
 
     EnrollmentId enrollmentId = new EnrollmentId(currentUser.getId(), professorGroupSubject.getId());
@@ -103,6 +112,24 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     } else {
       professorGroupSubjectService.save(professorGroupSubject);
     }
+  }
+
+  @Override
+  public List<Enrollment> getAllEnrollments() {
+    User currentUser = authenticationService.getCurrentUser();
+    return enrollmentRepository.findByUserId(currentUser.getId());
+  }
+
+  @Override
+  public List<Subject> getSubjectsNotEnrolled() {
+    List<Subject> subjectsEnrolled = getAllEnrollments().stream()
+      .map(Enrollment::getGroupSubject)
+      .map(ProfessorGroupSubject::getSubject)
+      .toList();
+
+    return subjectRepository.findAll().stream()
+      .filter(subject -> !subjectsEnrolled.contains(subject))
+      .toList();
   }
 
 

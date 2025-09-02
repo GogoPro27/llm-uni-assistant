@@ -88,7 +88,7 @@ public class ProfessorGroupSubject {
   }
 
   private void updateShortName() {
-    shortName = subject.getShortName() + members.stream()
+    shortName = subject.getShortName() + "-" + members.stream()
       .map(Professor::getShortName)
       .sorted()
       .collect(Collectors.joining(""));

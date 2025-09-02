@@ -1,4 +1,4 @@
-package com.finki.ukim.mk.backend.dto;
+package com.finki.ukim.mk.backend.dto.light;
 
 import com.finki.ukim.mk.backend.database.model.Subject;
 import lombok.AllArgsConstructor;

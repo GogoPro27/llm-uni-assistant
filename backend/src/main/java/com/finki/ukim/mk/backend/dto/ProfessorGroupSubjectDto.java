@@ -13,7 +13,7 @@ public class ProfessorGroupSubjectDto {
   private String shortName;
   private String subjectName;
   private List<String> professorMembers;
-  private LlmControlDto llmControlDto;
+  private LlmControlDto llmControl;
   //resources need to be added later
 
   public static ProfessorGroupSubjectDto fromProfessorGroupSubject(ProfessorGroupSubject professorGroupSubject) {
@@ -26,7 +26,7 @@ public class ProfessorGroupSubjectDto {
         String surname = professor.getUser().getSurname();
         return name + " " + surname;
       }).toList(),
-      LlmControlDto.fromLlmControl(professorGroupSubject.getLlmControl())
+      professorGroupSubject.getLlmControl() != null ? LlmControlDto.fromLlmControl(professorGroupSubject.getLlmControl()) : null
     );
   }
 }

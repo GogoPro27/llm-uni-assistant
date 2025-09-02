@@ -28,8 +28,8 @@ public class ProfessorGroupSubjectServiceImpl implements ProfessorGroupSubjectSe
   }
 
   @Override
-  public ProfessorGroupSubject save(ProfessorGroupSubject group) {
-    return professorGroupSubjectRepository.save(group);
+  public void save(ProfessorGroupSubject group) {
+    professorGroupSubjectRepository.save(group);
   }
 
   @Override
@@ -82,6 +82,11 @@ public class ProfessorGroupSubjectServiceImpl implements ProfessorGroupSubjectSe
       .map(Enrollment::getGroupSubject)
       .map(ProfessorGroupSubject::getSubject)
       .toList();
+  }
+
+  @Override
+  public List<ProfessorGroupSubject> getAllGroupsBySubjectId(Long subjectId) {
+    return professorGroupSubjectRepository.findBySubject_Id(subjectId);
   }
 
   private Professor validateAndGetCurrentProfessor() {
