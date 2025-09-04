@@ -5,6 +5,7 @@ import com.finki.ukim.mk.backend.security.CustomUserDetailsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -33,12 +34,11 @@ public class SecurityConfig {
       .cors(cors -> cors.configurationSource(corsConfigurationSource))
       .csrf(AbstractHttpConfigurer::disable)
       .authorizeHttpRequests(req ->
-        req.requestMatchers("/api/auth/**")
-          .permitAll()
-          .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html")
-          .permitAll()
-          .anyRequest()
-          .authenticated()
+        req.requestMatchers("/api/auth/**").permitAll()
+          .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+          .requestMatchers(HttpMethod.GET,  "/api/resources/{id}/download").permitAll()
+          .requestMatchers(HttpMethod.HEAD, "/api/resources/{id}/download").permitAll()
+          .anyRequest().authenticated()
       )
       .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
       .authenticationProvider(authenticationProvider())
