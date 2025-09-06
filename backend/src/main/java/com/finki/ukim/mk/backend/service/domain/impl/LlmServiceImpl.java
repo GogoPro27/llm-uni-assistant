@@ -3,6 +3,7 @@ package com.finki.ukim.mk.backend.service.domain.impl;
 import com.finki.ukim.mk.backend.database.model.ChatMessage;
 import com.finki.ukim.mk.backend.database.model.ChatSession;
 import com.finki.ukim.mk.backend.database.model.LlmControl;
+import com.finki.ukim.mk.backend.database.model.ProfessorGroupSubject;
 import com.finki.ukim.mk.backend.database.repository.ChatMessageRepository;
 import com.finki.ukim.mk.backend.mapper.ChatMessageMapper;
 import com.finki.ukim.mk.backend.service.domain.LlmService;
@@ -14,6 +15,9 @@ import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.ChatOptions;
 import org.springframework.ai.chat.prompt.Prompt;
+import org.springframework.ai.rag.retrieval.search.VectorStoreDocumentRetriever;
+import org.springframework.ai.vectorstore.filter.Filter;
+import org.springframework.ai.vectorstore.filter.FilterExpressionBuilder;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -43,9 +47,10 @@ public class LlmServiceImpl implements LlmService {
 
     List<Message> messagesToSend = lastMessages.stream().map(chatMessageMapper::to).collect(Collectors.toList());
 
-    LlmControl llmControl = message.getSession().getEnrollment().getGroupSubject().getLlmControl();
+    ProfessorGroupSubject groupSubject = message.getSession().getEnrollment().getGroupSubject();
+    LlmControl llmControl = groupSubject.getLlmControl();
 
-    if (llmControl != null && llmControl.getInstructions() != null) {
+    if (llmControl != null && llmControl.getInstructions() != null && !llmControl.getInstructions().isBlank()) {
       SystemMessage systemMessage = new SystemMessage(llmControl.getInstructions());
       messagesToSend.addFirst(systemMessage);
     } else {
@@ -58,8 +63,14 @@ public class LlmServiceImpl implements LlmService {
     Prompt prompt = new Prompt(messagesToSend, options);
 
     String provider = llmControl != null && llmControl.getLlmProvider() != null ? llmControl.getLlmProvider() : "openai";
+
+    Filter.Expression groupIdFilter = new FilterExpressionBuilder()
+      .eq("group_id", String.valueOf(groupSubject.getId()))
+      .build();
+
     ChatResponse chatResponse = chatClients.get(provider)
       .prompt(prompt)
+      .advisors(a -> a.param(VectorStoreDocumentRetriever.FILTER_EXPRESSION, groupIdFilter))
       .call()
       .chatResponse();
 

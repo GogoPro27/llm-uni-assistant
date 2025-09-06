@@ -8,11 +8,17 @@ import com.finki.ukim.mk.backend.dto.storage.StorageObject;
 import com.finki.ukim.mk.backend.service.domain.LlmResourceService;
 import com.finki.ukim.mk.backend.service.domain.ProfessorGroupSubjectService;
 import com.finki.ukim.mk.backend.service.domain.StorageService;
+import com.finki.ukim.mk.backend.service.domain.VectorStoreService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
+import java.net.URI;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 @Service
@@ -22,6 +28,7 @@ public class LlmResourceServiceImpl implements LlmResourceService {
   private final LlmResourceRepository llmResourceRepository;
   private final StorageService storage;
   private final ProfessorGroupSubjectService professorGroupSubjectService;
+  private final VectorStoreService vectorStoreService;
 
   public LlmResource createLink(LlmResource llmResource) {
     return llmResourceRepository.save(llmResource);
@@ -53,7 +60,7 @@ public class LlmResourceServiceImpl implements LlmResourceService {
       }
     }
 
-    LlmResource entity = LlmResource.builder()
+    LlmResource llmResource = LlmResource.builder()
       .groupSubject(group)
       .kind(ResourceKind.file)
       .title(file.getOriginalFilename())
@@ -64,7 +71,11 @@ public class LlmResourceServiceImpl implements LlmResourceService {
       .fileUri(finalFileUri)
       .build();
 
-    return llmResourceRepository.save(entity);
+    Path filePath = Paths.get(URI.create(llmResource.getFileUri()));
+    Resource resource = new FileSystemResource(filePath);
+    vectorStoreService.storeDocument(resource,groupSubjectId);
+
+    return llmResourceRepository.save(llmResource);
   }
 
   public void deleteResource(Long resourceId, boolean deleteBlobIfUnreferenced) {
