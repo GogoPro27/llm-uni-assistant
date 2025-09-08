@@ -54,6 +54,34 @@ export const llmControlAPI = {
     httpClient.delete(`/api/llm-controls/${llmControlId}`),
 };
 
+// LLM Resource endpoints
+export const llmResourceAPI = {
+  uploadFile: (groupSubjectId, file) => {
+    const formData = new FormData();
+    formData.append('groupSubjectId', groupSubjectId);
+    formData.append('file', file);
+    return httpClient.post('/api/resources/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+
+  createLink: (linkResourceRequest) =>
+    httpClient.post('/api/resources/link', linkResourceRequest),
+
+  listByGroup: (groupId) =>
+    httpClient.get(`/api/resources/group/${groupId}`),
+
+  download: (resourceId) =>
+    httpClient.get(`/api/resources/${resourceId}/download`, {
+      responseType: 'blob',
+    }),
+
+  delete: (resourceId, deleteBlobIfUnreferenced = true) =>
+    httpClient.delete(`/api/resources/${resourceId}`, {
+      params: { deleteBlobIfUnreferenced },
+    }),
+};
+
 // Professor Group Subject endpoints
 export const professorGroupSubjectAPI = {
   findById: (id) =>
@@ -77,6 +105,7 @@ export const API = {
   chatSessions: chatSessionAPI,
   enrollments: enrollmentAPI,
   llmControls: llmControlAPI,
+  llmResources: llmResourceAPI,
   professorGroupSubjects: professorGroupSubjectAPI,
 };
 

@@ -1,7 +1,12 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
-import { llmControlAPI, professorGroupSubjectAPI } from "../../../api/endpoints.js";
+import React, { useEffect, useMemo, useState, useRef } from "react";
+import { useParams } from "react-router-dom";
+import { llmControlAPI, professorGroupSubjectAPI, llmResourceAPI } from "../../../api/endpoints.js";
 import Navbar from "../common/Navbar.jsx";
+import Header from "../common/Header.jsx";
+import Breadcrumbs from "../common/Breadcrumbs.jsx";
+import Card from "../common/Card.jsx";
+import CardHeader from "../common/CardHeader.jsx";
+import Field from "../common/Field.jsx";
 
 function toParamsArray(obj) {
     if (!obj || typeof obj !== "object") return [];
@@ -16,7 +21,7 @@ function toParamsObject(arr) {
     const out = {};
     (arr || []).forEach(({ k, v }) => {
         const key = (k ?? "").trim();
-        if (key) out[key] = v; // keep as string; server can coerce if needed
+        if (key) out[key] = v;
     });
     return out;
 }
@@ -29,17 +34,21 @@ export default function EnrollmentDetailsPage() {
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState("");
 
+    const fileInputRef = useRef(null);
+    const [fileUploading, setFileUploading] = useState(false);
+    const [linkForm, setLinkForm] = useState({ title: "", url: "", description: "" });
+    const [linkSaving, setLinkSaving] = useState(false);
+    const [resourceOpLoading, setResourceOpLoading] = useState(false);
+
     const [formData, setFormData] = useState({
         llmProvider: "",
         modelName: "",
         systemPrompt: "",
-        // NEW:
         strictRag: false,
-        relaxedAnswers: false, // << NEW
+        relaxedAnswers: false,
         topK: "",
         similarityThreshold: "",
         memoryWindowSize: "",
-        // changed from {} to array of {id,k,v}
         params: [],
     });
 
@@ -51,16 +60,28 @@ export default function EnrollmentDetailsPage() {
                 const response = await professorGroupSubjectAPI.findById(professorGroupId);
                 console.log("Fetched details:", response);
                 if (!active) return;
-                setProfessorGroupSubject(response);
+
+                // attach resources (defensive: the list endpoint might return {data} or the array directly)
+                try {
+                    const res = await llmResourceAPI.listByGroup(professorGroupId);
+                    const resources = res?.data ?? res;
+                    // merge resources into the professorGroupSubject we set
+                    const merged = { ...(response || {}), llmResources: resources || [] };
+                    setProfessorGroupSubject(merged);
+                } catch (resErr) {
+                    console.warn("Failed to fetch resources for group:", resErr);
+                    // fallback to whatever the response already contains
+                    setProfessorGroupSubject(response);
+                }
+
                 if (response?.llmControl) {
                     setLlmControl(response.llmControl);
                     setFormData({
                         llmProvider: response.llmControl.llmProvider ?? "",
                         modelName: response.llmControl.modelName ?? "",
                         systemPrompt: response.llmControl.systemPrompt ?? "",
-                        // NEW: pre-populate like the rest
                         strictRag: Boolean(response.llmControl.strictRag ?? false),
-                        relaxedAnswers: Boolean(response.llmControl.relaxedAnswers ?? false), // << NEW
+                        relaxedAnswers: Boolean(response.llmControl.relaxedAnswers ?? false),
                         topK: Number.isFinite(response.llmControl.topK) ? response.llmControl.topK : "",
                         similarityThreshold: Number.isFinite(response.llmControl.similarityThreshold)
                             ? response.llmControl.similarityThreshold
@@ -82,18 +103,139 @@ export default function EnrollmentDetailsPage() {
         };
     }, [professorGroupId]);
 
+    const refreshProfessorGroup = async () => {
+        try {
+            const fresh = await professorGroupSubjectAPI.findById(professorGroupId);
+            // attempt to fetch up-to-date resources and merge
+            try {
+                const res = await llmResourceAPI.listByGroup(professorGroupId);
+                const resources = res?.data ?? res;
+                setProfessorGroupSubject({ ...(fresh || {}), llmResources: resources || [] });
+            } catch (resErr) {
+                console.warn("Failed to refresh resources, using professorGroupSubject payload:", resErr);
+                setProfessorGroupSubject(fresh);
+            }
+        } catch (err) {
+            console.error("Failed to refresh group subject:", err);
+        }
+    };
+
+    const handleUploadClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileSelected = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setFileUploading(true);
+        try {
+            await llmResourceAPI.uploadFile(professorGroupId, file);
+            await refreshProfessorGroup();
+            window.alert("File uploaded.");
+        } catch (err) {
+            console.error("Upload failed:", err);
+            window.alert("Failed to upload file.");
+        } finally {
+            setFileUploading(false);
+            if (fileInputRef.current) fileInputRef.current.value = "";
+        }
+    };
+
+    const handleDownload = async (resource) => {
+        try {
+            setResourceOpLoading(true);
+            const resp = await llmResourceAPI.download(resource.id);
+
+            let blobCandidate = resp?.data ?? resp;
+
+            if (blobCandidate instanceof ArrayBuffer) {
+                blobCandidate = new Blob([blobCandidate], { type: resource.mimeType || 'application/octet-stream' });
+            }
+
+            const isBlobLike = blobCandidate && typeof blobCandidate === 'object' && ('size' in blobCandidate || 'arrayBuffer' in blobCandidate || 'type' in blobCandidate);
+            if (!(blobCandidate instanceof Blob) && !isBlobLike) {
+                throw new Error('Server did not return a file blob.');
+            }
+
+            const blob = (blobCandidate instanceof Blob) ? blobCandidate : new Blob([blobCandidate], { type: resource.mimeType || 'application/octet-stream' });
+
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            const safeName = (resource.title && resource.title.replace(/[^a-z0-9.\-_]/gi, "_")) || `resource_${resource.id}`;
+            a.download = safeName;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (err) {
+            console.error("Download failed:", err);
+            window.alert("Failed to download file.");
+        } finally {
+            setResourceOpLoading(false);
+        }
+    };
+
+    const handleDeleteResource = async (resourceId) => {
+        if (!window.confirm("Delete this resource? This action cannot be undone.")) return;
+        try {
+            setResourceOpLoading(true);
+            await llmResourceAPI.delete(resourceId, true);
+            await refreshProfessorGroup();
+        } catch (err) {
+            console.error("Delete failed:", err);
+            window.alert("Failed to delete resource.");
+        } finally {
+            setResourceOpLoading(false);
+        }
+    };
+
+    const handleLinkFormChange = (e) => {
+        const { name, value } = e.target;
+        setLinkForm(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleCreateLink = async () => {
+        const { title, url, description } = linkForm;
+        if (!url || !title) {
+            window.alert("Please provide at least a title and a URL.");
+            return;
+        }
+        try {
+            setLinkSaving(true);
+            const payload = {
+                groupSubjectId: professorGroupId,
+                title,
+                url,
+                description,
+            };
+            await llmResourceAPI.createLink(payload);
+            setLinkForm({ title: "", url: "", description: "" });
+            await refreshProfessorGroup();
+            window.alert("Link created.");
+        } catch (err) {
+            console.error("Create link failed:", err);
+            window.alert("Failed to create link.");
+        } finally {
+            setLinkSaving(false);
+        }
+    };
+
+    const resources = professorGroupSubject?.llmResources || [];
+    const isLink = (r) => (String(r?.kind || "").toUpperCase() === "LINK");
+    const linkResources = resources.filter(isLink);
+    const docResources = resources.filter(r => !isLink(r));
+
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
     };
 
-    // NEW: checkbox / toggle handler
     const handleToggle = (e) => {
         const { name, checked } = e.target;
         setFormData((prev) => ({ ...prev, [name]: checked }));
     };
 
-    // NEW: number inputs with empty string support
     const handleNumberChange = (e) => {
         const { name, value } = e.target;
         if (value === "") {
@@ -109,7 +251,6 @@ export default function EnrollmentDetailsPage() {
         }
     };
 
-    // ---------- PARAMS (stable IDs so inputs keep focus) ----------
     const handleParamFieldChange = (id, field, value) => {
         setFormData((prev) => ({
             ...prev,
@@ -137,19 +278,17 @@ export default function EnrollmentDetailsPage() {
             params: (prev.params || []).filter((p) => p.id !== id),
         }));
     };
-    // --------------------------------------------------------------
 
     const handleSave = async () => {
         setSaving(true);
         setError("");
         try {
-            // Ensure numbers are sent as numbers; allow "" to be omitted
             const { topK, similarityThreshold, memoryWindowSize, params, ...rest } = formData;
 
             const payload = {
                 ...(llmControl || {}),
                 ...rest,
-                params: toParamsObject(params), // convert back to object
+                params: toParamsObject(params),
                 ...(topK === "" ? {} : { topK }),
                 ...(similarityThreshold === "" ? {} : { similarityThreshold }),
                 ...(memoryWindowSize === "" ? {} : { memoryWindowSize }),
@@ -171,7 +310,6 @@ export default function EnrollmentDetailsPage() {
         return professorGroupSubject?.professorMembers || [];
     }, [professorGroupSubject]);
 
-    // LOADING BRANCH — shell owns height, main area scrolls
     if (!professorGroupSubject && !error) {
         return (
             <div className="relative flex h-dvh flex-col overflow-hidden">
@@ -189,7 +327,6 @@ export default function EnrollmentDetailsPage() {
         );
     }
 
-    // MAIN BRANCH — same shell; single vertical scrollbar, horizontal overflow guarded
     return (
         <div className="relative flex h-dvh flex-col overflow-hidden">
             <Navbar />
@@ -213,9 +350,7 @@ export default function EnrollmentDetailsPage() {
                         </div>
                     )}
 
-                    {/* Layout: main on left, small box on right */}
                     <section className="mt-6 grid gap-6 md:grid-cols-[2fr_1fr] overflow-x-auto">
-                        {/* LLM Control on the left */}
                         <Card>
                             <CardHeader title="LLM Control" />
                             <div className="mt-4 space-y-4">
@@ -254,7 +389,6 @@ export default function EnrollmentDetailsPage() {
                   />
                                 </Field>
 
-                                {/* UPDATED: RAG behavior toggles (side-by-side) */}
                                 <Field label="RAG behavior">
                                     <div className="mt-2 flex flex-wrap items-center gap-6">
                                         <div className="flex items-center gap-3">
@@ -290,7 +424,6 @@ export default function EnrollmentDetailsPage() {
                                     </p>
                                 </Field>
 
-                                {/* NEW: Top K */}
                                 <Field label="Top K">
                                     <input
                                         type="number"
@@ -304,7 +437,6 @@ export default function EnrollmentDetailsPage() {
                                     />
                                 </Field>
 
-                                {/* NEW: Similarity threshold */}
                                 <Field label="Similarity threshold">
                                     <input
                                         type="number"
@@ -319,7 +451,6 @@ export default function EnrollmentDetailsPage() {
                                     />
                                 </Field>
 
-                                {/* NEW: Memory window size */}
                                 <Field label="Memory window size">
                                     <input
                                         type="number"
@@ -388,77 +519,143 @@ export default function EnrollmentDetailsPage() {
                             </div>
                         </Card>
 
-                        {/* Professors on the right */}
-                        <Card>
-                            <CardHeader title="Professor Members" />
-                            <ul className="mt-3 list-inside list-disc text-sm text-gray-700">
-                                {members.length === 0 && <li className="text-gray-500">No members</li>}
-                                {members.map((p, idx) => (
-                                    <li key={`${p}-${idx}`}>{p}</li>
-                                ))}
-                            </ul>
-                        </Card>
+                        <div className="flex flex-col gap-4">
+                            <Card>
+                                <CardHeader title="Professor Members" />
+                                <ul className="mt-3 list-inside list-disc text-sm text-gray-700 max-h-40 overflow-auto">
+                                    {members.length === 0 && <li className="text-gray-500">No members</li>}
+                                    {members.map((p, idx) => (
+                                        <li key={`${p}-${idx}`}>{p}</li>
+                                    ))}
+                                </ul>
+                            </Card>
+
+                            <Card>
+                                <CardHeader title="Documents" aside={
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            ref={fileInputRef}
+                                            type="file"
+                                            onChange={handleFileSelected}
+                                            className="hidden"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={handleUploadClick}
+                                            disabled={fileUploading}
+                                            className="rounded-xl px-3 py-1 text-sm text-indigo-600 hover:bg-indigo-50"
+                                        >
+                                            {fileUploading ? "Uploading…" : "+ Attach file"}
+                                        </button>
+                                    </div>
+                                } />
+                                <div className="mt-3 space-y-3">
+                                    {docResources.length === 0 && <p className="text-sm text-gray-500">No documents.</p>}
+                                    {docResources.map((r) => (
+                                        <div key={r.id} className="flex items-center justify-between gap-3">
+                                            <div className="min-w-0">
+                                                <div className="text-sm font-medium text-gray-900">{r.title || `Document ${r.id}`}</div>
+                                                {r.description && <div className="text-xs text-gray-500 truncate">{r.description}</div>}
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleDownload(r)}
+                                                    disabled={resourceOpLoading}
+                                                    className="rounded-xl px-3 py-1 text-sm text-indigo-600 hover:bg-indigo-50"
+                                                >
+                                                    Download
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleDeleteResource(r.id)}
+                                                    disabled={resourceOpLoading}
+                                                    className="rounded-xl px-3 py-1 text-sm text-red-600 hover:bg-red-50"
+                                                >
+                                                    Delete
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </Card>
+
+                            <Card>
+                                <CardHeader title="Links" />
+                                <div className="mt-3 space-y-3">
+                                    <div className="space-y-2">
+                                        <input
+                                            name="title"
+                                            value={linkForm.title}
+                                            onChange={handleLinkFormChange}
+                                            placeholder="Title"
+                                            className="block w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm outline-none placeholder:text-gray-400 focus:border-indigo-500 focus:ring-indigo-500"
+                                        />
+                                        <input
+                                            name="url"
+                                            value={linkForm.url}
+                                            onChange={handleLinkFormChange}
+                                            placeholder="https://..."
+                                            className="block w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm outline-none placeholder:text-gray-400 focus:border-indigo-500 focus:ring-indigo-500"
+                                        />
+                                        <input
+                                            name="description"
+                                            value={linkForm.description}
+                                            onChange={handleLinkFormChange}
+                                            placeholder="Description (optional)"
+                                            className="block w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm outline-none placeholder:text-gray-400 focus:border-indigo-500 focus:ring-indigo-500"
+                                        />
+                                        <div className="flex justify-end">
+                                            <button
+                                                type="button"
+                                                onClick={handleCreateLink}
+                                                disabled={linkSaving}
+                                                className="rounded-2xl bg-indigo-600 px-3 py-1 text-sm text-white hover:bg-indigo-700 disabled:opacity-60"
+                                            >
+                                                {linkSaving ? "Saving…" : "Save link"}
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {linkResources.length === 0 && <p className="text-sm text-gray-500">No links.</p>}
+                                    {linkResources.map((r) => (
+                                        <div key={r.id} className="flex items-center justify-between gap-3">
+                                            <div className="min-w-0">
+                                                <a
+                                                    href={r.url}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                    className="text-sm font-medium text-indigo-600 hover:underline"
+                                                >
+                                                    {r.title || r.url}
+                                                </a>
+                                                {r.description && <div className="text-xs text-gray-500 truncate">{r.description}</div>}
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <a
+                                                    href={r.url}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                    className="rounded-xl px-3 py-1 text-sm text-indigo-600 hover:bg-indigo-50"
+                                                >
+                                                    Open
+                                                </a>
+                                                <button
+                                                    onClick={() => handleDeleteResource(r.id)}
+                                                    disabled={resourceOpLoading}
+                                                    className="rounded-xl px-3 py-1 text-sm text-red-600 hover:bg-red-50"
+                                                >
+                                                    Delete
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </Card>
+                        </div>
                     </section>
                 </div>
             </div>
         </div>
-    );
-}
-
-function Header({ title, subtitle }) {
-    return (
-        <div className="mt-2">
-            <h1 className="text-3xl font-semibold tracking-tight text-gray-900">{title}</h1>
-            {subtitle ? <p className="mt-1 text-base text-gray-600">{subtitle}</p> : null}
-        </div>
-    );
-}
-
-function Breadcrumbs({ items }) {
-    if (!items?.length) return null;
-    return (
-        <nav className="text-sm text-gray-600" aria-label="Breadcrumb">
-            <ol className="flex items-center gap-2">
-                {items.map((item, idx) => (
-                    <li key={`${item.label}-${idx}`} className="flex items-center gap-2">
-                        {item.to ? (
-                            <Link to={item.to} className="text-indigo-600 hover:text-indigo-700 hover:underline">
-                                {item.label}
-                            </Link>
-                        ) : (
-                            <span className="text-gray-700">{item.label}</span>
-                        )}
-                        {idx < items.length - 1 && <span className="text-gray-400">/</span>}
-                    </li>
-                ))}
-            </ol>
-        </nav>
-    );
-}
-
-function Card({ children }) {
-    // min-w-0 prevents grid/flex children from forcing horizontal overflow
-    return (
-        <div className="min-w-0 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-            {children}
-        </div>
-    );
-}
-
-function CardHeader({ title, aside }) {
-    return (
-        <div className="flex items-center justify-between">
-            <h3 className="text-base font-semibold text-gray-900">{title}</h3>
-            {aside}
-        </div>
-    );
-}
-
-function Field({ label, children }) {
-    return (
-        <label className="block">
-            <span className="block text-sm font-medium text-gray-700">{label}</span>
-            {children}
-        </label>
     );
 }

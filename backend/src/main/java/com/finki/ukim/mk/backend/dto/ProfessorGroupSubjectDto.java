@@ -1,6 +1,7 @@
 package com.finki.ukim.mk.backend.dto;
 
 import com.finki.ukim.mk.backend.database.model.ProfessorGroupSubject;
+import com.finki.ukim.mk.backend.dto.light.LlmResourceLightDto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -14,7 +15,7 @@ public class ProfessorGroupSubjectDto {
   private String subjectName;
   private List<String> professorMembers;
   private LlmControlDto llmControl;
-  //resources need to be added later
+  private List<LlmResourceLightDto> llmResources;
 
   public static ProfessorGroupSubjectDto fromProfessorGroupSubject(ProfessorGroupSubject professorGroupSubject) {
     return new ProfessorGroupSubjectDto(
@@ -26,7 +27,8 @@ public class ProfessorGroupSubjectDto {
         String surname = professor.getUser().getSurname();
         return name + " " + surname;
       }).toList(),
-      professorGroupSubject.getLlmControl() != null ? LlmControlDto.fromLlmControl(professorGroupSubject.getLlmControl()) : null
+      professorGroupSubject.getLlmControl() != null ? LlmControlDto.fromLlmControl(professorGroupSubject.getLlmControl()) : null,
+      professorGroupSubject.getLlmResources().stream().map(LlmResourceLightDto::fromLlmResource).toList()
     );
   }
 }

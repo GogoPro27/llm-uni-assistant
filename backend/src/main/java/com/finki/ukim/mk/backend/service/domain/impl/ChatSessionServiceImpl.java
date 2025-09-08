@@ -57,8 +57,8 @@ public class ChatSessionServiceImpl implements ChatSessionService {
     chatMessageService.save(message);
     ChatSession session = message.getSession();
     if (session.getMessages().size() == 1) {
-      session.setTitle(message.getContent().length() > 10
-        ? message.getContent().substring(0, 10) + "..."
+      session.setTitle(message.getContent().length() > 20
+        ? message.getContent().substring(0, 20) + "..."
         : message.getContent());
     }
 
