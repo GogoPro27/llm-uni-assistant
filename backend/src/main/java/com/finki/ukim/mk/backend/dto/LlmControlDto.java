@@ -21,6 +21,11 @@ public class LlmControlDto {
   private String llmProvider;
   private String systemPrompt;
   private Map<String, Object> params;
+  private boolean strictRag;
+  private boolean relaxedAnswers;
+  private int topK;
+  private double similarityThreshold;
+  private int memoryWindowSize;
 
   public static LlmControlDto fromLlmControl(LlmControl llmControl) {
     ObjectMapper mapper = new ObjectMapper();
@@ -39,7 +44,12 @@ public class LlmControlDto {
       llmControl.getModelName(),
       llmControl.getLlmProvider(),
       llmControl.getInstructions(),
-      paramsMap
+      paramsMap,
+      llmControl.isStrictRag(),
+      llmControl.isRelaxedAnswers(),
+      llmControl.getTopK(),
+      llmControl.getSimilarityThreshold(),
+      llmControl.getMemoryWindowSize()
     );
   }
 }

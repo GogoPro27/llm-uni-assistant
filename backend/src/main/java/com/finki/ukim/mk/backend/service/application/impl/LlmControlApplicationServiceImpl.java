@@ -32,6 +32,11 @@ public class LlmControlApplicationServiceImpl implements LlmControlApplicationSe
     existingLlmControl.setInstructions(llmControl.getSystemPrompt());
     existingLlmControl.setModelName(llmControl.getModelName());
     existingLlmControl.setParams(LlmParametersUtils.serialize(llmControl.getParams()));
+    existingLlmControl.setStrictRag(llmControl.isStrictRag());
+    existingLlmControl.setRelaxedAnswers(llmControl.isRelaxedAnswers());
+    existingLlmControl.setTopK(llmControl.getTopK());
+    existingLlmControl.setSimilarityThreshold(llmControl.getSimilarityThreshold());
+    existingLlmControl.setMemoryWindowSize(llmControl.getMemoryWindowSize());
 
     LlmControl updatedLlmControl = llmControlService.saveLlmControl(existingLlmControl);
     return LlmControlDto.fromLlmControl(updatedLlmControl);

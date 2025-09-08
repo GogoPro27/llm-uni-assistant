@@ -37,20 +37,32 @@ public class LlmControl {
   @JoinColumn(name = "group_subject_id")
   private ProfessorGroupSubject groupSubject;
 
-  @Builder.Default
   @Column(name = "model_name", nullable = false)
-  private String modelName = "gpt-4o";
+  private String modelName;
 
-  @Builder.Default
   @Column(name = "llm_provider", nullable = false)
-  private String llmProvider = "openai";
+  private String llmProvider;
 
-  @Builder.Default
   @Column(name = "instructions")
-  private String instructions = "";
+  private String instructions;
 
   @Builder.Default
   @Column(name = "params", columnDefinition = "jsonb", nullable = false)
   @JdbcTypeCode(SqlTypes.JSON)
   private String params = "{}";
+
+  @Column(name = "strict_rag", nullable = false)
+  private boolean strictRag;
+
+  @Column(name = "relaxed_answers", nullable = false)
+  private boolean relaxedAnswers;
+
+  @Column(name = "top_k", nullable = false)
+  private int topK;
+
+  @Column(name = "similarity_threshold", nullable = false)
+  private double similarityThreshold;
+
+  @Column(name = "memory_window_size", nullable = false)
+  private int memoryWindowSize;
 }

@@ -15,6 +15,7 @@ import com.finki.ukim.mk.backend.exception.SubjectNotFoundException;
 import com.finki.ukim.mk.backend.exception.UnauthorizedUserException;
 import com.finki.ukim.mk.backend.exception.UserAlreadyEnrolledException;
 import com.finki.ukim.mk.backend.exception.UserNotEnrolledException;
+import com.finki.ukim.mk.backend.factory.LlmControlFactory;
 import com.finki.ukim.mk.backend.service.domain.AuthenticationService;
 import com.finki.ukim.mk.backend.service.domain.EnrollmentService;
 import com.finki.ukim.mk.backend.service.domain.LlmControlService;
@@ -34,6 +35,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
   private final SubjectRepository subjectRepository;
   private final AuthenticationService authenticationService;
   private final LlmControlService llmControlService;
+  private final LlmControlFactory llmControlFactory;
 
   @Override
   public Enrollment enrollAndCreateGroup(Long subjectId) {
@@ -50,7 +52,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
     professorGroupSubject.addProfessor(currentProfessor);
 
-    LlmControl llmControl = LlmControl.builder().groupSubject(professorGroupSubject).build();
+    LlmControl llmControl = llmControlFactory.create(professorGroupSubject);
     professorGroupSubject.setLlmControl(llmControl);
 
     llmControlService.saveLlmControl(llmControl);

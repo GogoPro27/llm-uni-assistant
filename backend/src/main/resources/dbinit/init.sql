@@ -67,6 +67,11 @@ CREATE TABLE llm_controls
     model_name       TEXT,
     llm_provider      TEXT,
     instructions     TEXT,
+    strict_rag     BOOLEAN,
+    relaxed_answers BOOLEAN,
+    top_k           INT,
+    similarity_threshold DOUBLE PRECISION,
+    memory_window_size INT,
     params           JSONB DEFAULT '{}'::jsonb
 );
 

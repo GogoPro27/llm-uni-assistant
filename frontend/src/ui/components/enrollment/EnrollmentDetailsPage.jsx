@@ -1,10 +1,28 @@
-import React, {useEffect, useMemo, useState} from "react";
-import {Link, useParams} from "react-router-dom";
-import {llmControlAPI, professorGroupSubjectAPI} from "../../../api/endpoints.js";
+import React, { useEffect, useMemo, useState } from "react";
+import { Link, useParams } from "react-router-dom";
+import { llmControlAPI, professorGroupSubjectAPI } from "../../../api/endpoints.js";
 import Navbar from "../common/Navbar.jsx";
 
+function toParamsArray(obj) {
+    if (!obj || typeof obj !== "object") return [];
+    return Object.entries(obj).map(([k, v]) => ({
+        id: crypto?.randomUUID ? crypto.randomUUID() : `${Date.now()}_${Math.random()}`,
+        k,
+        v: String(v ?? ""),
+    }));
+}
+
+function toParamsObject(arr) {
+    const out = {};
+    (arr || []).forEach(({ k, v }) => {
+        const key = (k ?? "").trim();
+        if (key) out[key] = v; // keep as string; server can coerce if needed
+    });
+    return out;
+}
+
 export default function EnrollmentDetailsPage() {
-    const {professorGroupId} = useParams();
+    const { professorGroupId } = useParams();
 
     const [professorGroupSubject, setProfessorGroupSubject] = useState(null);
     const [llmControl, setLlmControl] = useState(null);
@@ -15,7 +33,14 @@ export default function EnrollmentDetailsPage() {
         llmProvider: "",
         modelName: "",
         systemPrompt: "",
-        params: {},
+        // NEW:
+        strictRag: false,
+        relaxedAnswers: false, // << NEW
+        topK: "",
+        similarityThreshold: "",
+        memoryWindowSize: "",
+        // changed from {} to array of {id,k,v}
+        params: [],
     });
 
     useEffect(() => {
@@ -30,10 +55,20 @@ export default function EnrollmentDetailsPage() {
                 if (response?.llmControl) {
                     setLlmControl(response.llmControl);
                     setFormData({
-                        llmProvider: response.llmControl.llmProvider || "",
-                        modelName: response.llmControl.modelName || "",
-                        systemPrompt: response.llmControl.systemPrompt || "",
-                        params: response.llmControl.params || {},
+                        llmProvider: response.llmControl.llmProvider ?? "",
+                        modelName: response.llmControl.modelName ?? "",
+                        systemPrompt: response.llmControl.systemPrompt ?? "",
+                        // NEW: pre-populate like the rest
+                        strictRag: Boolean(response.llmControl.strictRag ?? false),
+                        relaxedAnswers: Boolean(response.llmControl.relaxedAnswers ?? false), // << NEW
+                        topK: Number.isFinite(response.llmControl.topK) ? response.llmControl.topK : "",
+                        similarityThreshold: Number.isFinite(response.llmControl.similarityThreshold)
+                            ? response.llmControl.similarityThreshold
+                            : "",
+                        memoryWindowSize: Number.isFinite(response.llmControl.memoryWindowSize)
+                            ? response.llmControl.memoryWindowSize
+                            : "",
+                        params: toParamsArray(response.llmControl.params || {}),
                     });
                 }
             } catch (err) {
@@ -48,45 +83,78 @@ export default function EnrollmentDetailsPage() {
     }, [professorGroupId]);
 
     const handleInputChange = (e) => {
-        const {name, value} = e.target;
-        setFormData((prev) => ({...prev, [name]: value}));
+        const { name, value } = e.target;
+        setFormData((prev) => ({ ...prev, [name]: value }));
     };
 
-    const handleParamChange = (oldKey, newKey, newValue) => {
-        setFormData((prev) => {
-            const updated = {...(prev.params || {})};
-            if (oldKey !== newKey) delete updated[oldKey];
-            updated[newKey] = newValue;
-            return {...prev, params: updated};
-        });
+    // NEW: checkbox / toggle handler
+    const handleToggle = (e) => {
+        const { name, checked } = e.target;
+        setFormData((prev) => ({ ...prev, [name]: checked }));
+    };
+
+    // NEW: number inputs with empty string support
+    const handleNumberChange = (e) => {
+        const { name, value } = e.target;
+        if (value === "") {
+            setFormData((prev) => ({ ...prev, [name]: "" }));
+        } else {
+            let num;
+            if (name === "topK" || name === "memoryWindowSize") {
+                num = parseInt(value, 10);
+            } else {
+                num = parseFloat(value); // similarityThreshold
+            }
+            setFormData((prev) => ({ ...prev, [name]: isNaN(num) ? "" : num }));
+        }
+    };
+
+    // ---------- PARAMS (stable IDs so inputs keep focus) ----------
+    const handleParamFieldChange = (id, field, value) => {
+        setFormData((prev) => ({
+            ...prev,
+            params: (prev.params || []).map((p) => (p.id === id ? { ...p, [field]: value } : p)),
+        }));
     };
 
     const handleAddParam = () => {
-        setFormData((prev) => {
-            const next = {...(prev.params || {})};
-            let draftKey = "";
-            let i = 1;
-            while (Object.prototype.hasOwnProperty.call(next, draftKey)) {
-                draftKey = `key_${i++}`;
-            }
-            next[draftKey] = "";
-            return {...prev, params: next};
-        });
+        setFormData((prev) => ({
+            ...prev,
+            params: [
+                ...(prev.params || []),
+                {
+                    id: crypto?.randomUUID ? crypto.randomUUID() : `${Date.now()}_${Math.random()}`,
+                    k: "",
+                    v: "",
+                },
+            ],
+        }));
     };
 
-    const handleRemoveParam = (key) => {
-        setFormData((prev) => {
-            const updated = {...(prev.params || {})};
-            delete updated[key];
-            return {...prev, params: updated};
-        });
+    const handleRemoveParam = (id) => {
+        setFormData((prev) => ({
+            ...prev,
+            params: (prev.params || []).filter((p) => p.id !== id),
+        }));
     };
+    // --------------------------------------------------------------
 
     const handleSave = async () => {
         setSaving(true);
         setError("");
         try {
-            const payload = {...(llmControl || {}), ...formData};
+            // Ensure numbers are sent as numbers; allow "" to be omitted
+            const { topK, similarityThreshold, memoryWindowSize, params, ...rest } = formData;
+
+            const payload = {
+                ...(llmControl || {}),
+                ...rest,
+                params: toParamsObject(params), // convert back to object
+                ...(topK === "" ? {} : { topK }),
+                ...(similarityThreshold === "" ? {} : { similarityThreshold }),
+                ...(memoryWindowSize === "" ? {} : { memoryWindowSize }),
+            };
+
             await llmControlAPI.update(payload);
             setLlmControl(payload);
             window.alert("LLM control updated successfully!");
@@ -103,16 +171,17 @@ export default function EnrollmentDetailsPage() {
         return professorGroupSubject?.professorMembers || [];
     }, [professorGroupSubject]);
 
+    // LOADING BRANCH — shell owns height, main area scrolls
     if (!professorGroupSubject && !error) {
         return (
-            <div className="flex flex-col h-full">
-                <Navbar/>
-                <div className="min-h-screen bg-gray-50 text-gray-900">
+            <div className="relative flex h-dvh flex-col overflow-hidden">
+                <Navbar />
+                <div className="grow overflow-auto bg-gray-50 text-gray-900">
                     <div className="mx-auto max-w-5xl p-6">
-                        <Header title="Loading…" subtitle="Fetching enrollment details"/>
+                        <Header title="Loading…" subtitle="Fetching enrollment details" />
                         <div className="mt-6 animate-pulse space-y-4">
-                            <div className="h-24 rounded-2xl bg-gray-200"/>
-                            <div className="h-56 rounded-2xl bg-gray-200"/>
+                            <div className="h-24 rounded-2xl bg-gray-200" />
+                            <div className="h-56 rounded-2xl bg-gray-200" />
                         </div>
                     </div>
                 </div>
@@ -120,15 +189,16 @@ export default function EnrollmentDetailsPage() {
         );
     }
 
+    // MAIN BRANCH — same shell; single vertical scrollbar, horizontal overflow guarded
     return (
-        <div className="flex flex-col h-full">
-            <Navbar/>
-            <div className="min-h-screen bg-gray-50 text-gray-900">
+        <div className="relative flex h-dvh flex-col overflow-hidden">
+            <Navbar />
+            <div className="grow overflow-auto bg-gray-50 text-gray-900">
                 <div className="mx-auto max-w-5xl p-6">
                     <Breadcrumbs
                         items={[
-                            {label: "Enrollments", to: "/enrollments"},
-                            {label: professorGroupSubject?.subjectName || "Enrollment"},
+                            { label: "Enrollments", to: "/enrollments" },
+                            { label: professorGroupSubject?.subjectName || "Enrollment" },
                         ]}
                     />
 
@@ -144,10 +214,10 @@ export default function EnrollmentDetailsPage() {
                     )}
 
                     {/* Layout: main on left, small box on right */}
-                    <section className="mt-6 grid gap-6 md:grid-cols-[2fr_1fr]">
+                    <section className="mt-6 grid gap-6 md:grid-cols-[2fr_1fr] overflow-x-auto">
                         {/* LLM Control on the left */}
                         <Card>
-                            <CardHeader title="LLM Control"/>
+                            <CardHeader title="LLM Control" />
                             <div className="mt-4 space-y-4">
                                 <Field label="LLM Provider">
                                     <select
@@ -174,44 +244,128 @@ export default function EnrollmentDetailsPage() {
                                 </Field>
 
                                 <Field label="System prompt">
-                <textarea
-                    name="systemPrompt"
-                    value={formData.systemPrompt}
-                    onChange={handleInputChange}
-                    rows={5}
-                    className="mt-1 block w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm outline-none ring-1 ring-transparent placeholder:text-gray-400 focus:border-indigo-500 focus:ring-indigo-500"
-                    placeholder="You are a helpful assistant…"
-                />
+                  <textarea
+                      name="systemPrompt"
+                      value={formData.systemPrompt}
+                      onChange={handleInputChange}
+                      rows={5}
+                      className="mt-1 block w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm outline-none ring-1 ring-transparent placeholder:text-gray-400 focus:border-indigo-500 focus:ring-indigo-500"
+                      placeholder="You are a helpful assistant…"
+                  />
+                                </Field>
+
+                                {/* UPDATED: RAG behavior toggles (side-by-side) */}
+                                <Field label="RAG behavior">
+                                    <div className="mt-2 flex flex-wrap items-center gap-6">
+                                        <div className="flex items-center gap-3">
+                                            <input
+                                                id="strictRag"
+                                                name="strictRag"
+                                                type="checkbox"
+                                                checked={!!formData.strictRag}
+                                                onChange={handleToggle}
+                                                className="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                            />
+                                            <label htmlFor="strictRag" className="text-sm text-gray-700">
+                                                Strict RAG — use context only
+                                            </label>
+                                        </div>
+
+                                        <div className="flex items-center gap-3">
+                                            <input
+                                                id="relaxedAnswers"
+                                                name="relaxedAnswers"
+                                                type="checkbox"
+                                                checked={!!formData.relaxedAnswers}
+                                                onChange={handleToggle}
+                                                className="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                            />
+                                            <label htmlFor="relaxedAnswers" className="text-sm text-gray-700">
+                                                Relaxed answers — allow prior knowledge
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <p className="mt-2 text-xs text-gray-500">
+                                        When both are off, the model answers normally.
+                                    </p>
+                                </Field>
+
+                                {/* NEW: Top K */}
+                                <Field label="Top K">
+                                    <input
+                                        type="number"
+                                        name="topK"
+                                        value={formData.topK}
+                                        onChange={handleNumberChange}
+                                        min={0}
+                                        step={1}
+                                        className="mt-1 block w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm outline-none ring-1 ring-transparent placeholder:text-gray-400 focus:border-indigo-500 focus:ring-indigo-500"
+                                        placeholder="e.g. 5"
+                                    />
+                                </Field>
+
+                                {/* NEW: Similarity threshold */}
+                                <Field label="Similarity threshold">
+                                    <input
+                                        type="number"
+                                        name="similarityThreshold"
+                                        value={formData.similarityThreshold}
+                                        onChange={handleNumberChange}
+                                        min={0}
+                                        max={1}
+                                        step={0.01}
+                                        className="mt-1 block w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm outline-none ring-1 ring-transparent placeholder:text-gray-400 focus:border-indigo-500 focus:ring-indigo-500"
+                                        placeholder="0.00 – 1.00 (e.g. 0.75)"
+                                    />
+                                </Field>
+
+                                {/* NEW: Memory window size */}
+                                <Field label="Memory window size">
+                                    <input
+                                        type="number"
+                                        name="memoryWindowSize"
+                                        value={formData.memoryWindowSize}
+                                        onChange={handleNumberChange}
+                                        min={0}
+                                        step={1}
+                                        className="mt-1 block w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm outline-none ring-1 ring-transparent placeholder:text-gray-400 focus:border-indigo-500 focus:ring-indigo-500"
+                                        placeholder="e.g. 20"
+                                    />
                                 </Field>
 
                                 <Field label="Params">
                                     <div className="space-y-2">
-                                        {Object.entries(formData.params || {}).map(([key, value], i) => (
-                                            <div key={`${key}-${i}`} className="flex items-center gap-2">
+                                        {(formData.params || []).length === 0 && (
+                                            <p className="text-sm text-gray-500">No params yet.</p>
+                                        )}
+
+                                        {(formData.params || []).map((p) => (
+                                            <div key={p.id} className="flex items-center gap-2">
                                                 <input
                                                     type="text"
-                                                    value={key}
-                                                    onChange={(e) => handleParamChange(key, e.target.value, value)}
+                                                    value={p.k}
+                                                    onChange={(e) => handleParamFieldChange(p.id, "k", e.target.value)}
                                                     className="flex-1 rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 outline-none ring-1 ring-transparent placeholder:text-gray-400 focus:border-indigo-500 focus:ring-indigo-500"
                                                     placeholder="Key (e.g. temperature)"
                                                 />
                                                 <input
                                                     type="text"
-                                                    value={String(value)}
-                                                    onChange={(e) => handleParamChange(key, key, e.target.value)}
+                                                    value={p.v}
+                                                    onChange={(e) => handleParamFieldChange(p.id, "v", e.target.value)}
                                                     className="flex-1 rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 outline-none ring-1 ring-transparent placeholder:text-gray-400 focus:border-indigo-500 focus:ring-indigo-500"
                                                     placeholder="Value (e.g. 0.2)"
                                                 />
                                                 <button
                                                     type="button"
-                                                    onClick={() => handleRemoveParam(key)}
+                                                    onClick={() => handleRemoveParam(p.id)}
                                                     className="rounded-xl px-3 py-2 text-sm text-red-600 hover:bg-red-50"
-                                                    aria-label={`Remove ${key}`}
+                                                    aria-label={`Remove ${p.k || "param"}`}
                                                 >
                                                     Remove
                                                 </button>
                                             </div>
                                         ))}
+
                                         <button
                                             type="button"
                                             onClick={handleAddParam}
@@ -236,7 +390,7 @@ export default function EnrollmentDetailsPage() {
 
                         {/* Professors on the right */}
                         <Card>
-                            <CardHeader title="Professor Members"/>
+                            <CardHeader title="Professor Members" />
                             <ul className="mt-3 list-inside list-disc text-sm text-gray-700">
                                 {members.length === 0 && <li className="text-gray-500">No members</li>}
                                 {members.map((p, idx) => (
@@ -251,18 +405,16 @@ export default function EnrollmentDetailsPage() {
     );
 }
 
-function Header({title, subtitle}) {
+function Header({ title, subtitle }) {
     return (
         <div className="mt-2">
             <h1 className="text-3xl font-semibold tracking-tight text-gray-900">{title}</h1>
-            {subtitle ? (
-                <p className="mt-1 text-base text-gray-600">{subtitle}</p>
-            ) : null}
+            {subtitle ? <p className="mt-1 text-base text-gray-600">{subtitle}</p> : null}
         </div>
     );
 }
 
-function Breadcrumbs({items}) {
+function Breadcrumbs({ items }) {
     if (!items?.length) return null;
     return (
         <nav className="text-sm text-gray-600" aria-label="Breadcrumb">
@@ -270,10 +422,7 @@ function Breadcrumbs({items}) {
                 {items.map((item, idx) => (
                     <li key={`${item.label}-${idx}`} className="flex items-center gap-2">
                         {item.to ? (
-                            <Link
-                                to={item.to}
-                                className="text-indigo-600 hover:text-indigo-700 hover:underline"
-                            >
+                            <Link to={item.to} className="text-indigo-600 hover:text-indigo-700 hover:underline">
                                 {item.label}
                             </Link>
                         ) : (
@@ -287,15 +436,16 @@ function Breadcrumbs({items}) {
     );
 }
 
-function Card({children}) {
+function Card({ children }) {
+    // min-w-0 prevents grid/flex children from forcing horizontal overflow
     return (
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+        <div className="min-w-0 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
             {children}
         </div>
     );
 }
 
-function CardHeader({title, aside}) {
+function CardHeader({ title, aside }) {
     return (
         <div className="flex items-center justify-between">
             <h3 className="text-base font-semibold text-gray-900">{title}</h3>
@@ -304,7 +454,7 @@ function CardHeader({title, aside}) {
     );
 }
 
-function Field({label, children}) {
+function Field({ label, children }) {
     return (
         <label className="block">
             <span className="block text-sm font-medium text-gray-700">{label}</span>
