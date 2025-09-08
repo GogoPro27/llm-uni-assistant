@@ -11,7 +11,9 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./src/main/resources/dbinit/init.sql:/docker-entrypoint-initdb.d/01_init.sql:ro
-      - ./src/main/resources/dbinit/dump.sql:/docker-entrypoint-initdb.d/02_dump.sql:ro
+      - ./src/main/resources/dbinit/seed_students.sql:/docker-entrypoint-initdb.d/02_dump.sql:ro
+      - ./src/main/resources/dbinit/seed_subjects.sql:/docker-entrypoint-initdb.d/03_dump.sql:ro
+      - ./src/main/resources/dbinit/seed_professors.sql:/docker-entrypoint-initdb.d/04_dump.sql:ro
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U app_user -d llm_uni_assistant" ]
       interval: 10s
