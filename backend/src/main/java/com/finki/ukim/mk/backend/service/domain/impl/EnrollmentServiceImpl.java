@@ -96,6 +96,34 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     return enrollmentRepository.save(enrollment);
   }
 
+  @Deprecated
+  @Override
+  public Enrollment enrollAsStudent(Long subjectId, Long groupId) {
+    User currentUser = authenticationService.getCurrentUser();
+    Subject subject = validateAndGetSubject(subjectId);
+    validateNotAlreadyEnrolled(currentUser, subject);
+
+    ProfessorGroupSubject professorGroupSubject = professorGroupSubjectService.findById(groupId);
+
+    if (!professorGroupSubject.getSubject().getId().equals(subjectId)) {
+      throw new GroupDoesntBelongToSubjectException(groupId, subjectId);
+    }
+
+    if (!currentUser.isStudent()) {
+      throw new UnauthorizedUserException("This method can only be called by students");
+    }
+
+    EnrollmentId enrollmentId = new EnrollmentId(currentUser.getId(), professorGroupSubject.getId());
+    Enrollment enrollment = Enrollment.builder()
+      .id(enrollmentId)
+      .groupSubject(professorGroupSubject)
+      .user(currentUser)
+      .build();
+
+
+    return enrollmentRepository.save(enrollment);
+  }
+
   @Override
   public void unenroll(Long subjectId) {
     User currentUser = validateAndGetUser();

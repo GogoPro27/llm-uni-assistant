@@ -53,6 +53,14 @@ public class EnrollmentController {
     return ResponseEntity.ok(result);
   }
 
+  @PostMapping("/subjects/{subjectId}/enroll/{groupId}")
+  public ResponseEntity<EnrollmentProfessorGroupDetailsDto> enrollAsStudent(
+    @PathVariable("subjectId") @NotNull @Positive Long subjectId,
+    @PathVariable("groupId") @NotNull @Positive Long groupId) {
+    EnrollmentProfessorGroupDetailsDto result = enrollmentApplicationService.enrollAsStudent(subjectId, groupId);
+    return ResponseEntity.ok(result);
+  }
+
   @DeleteMapping("/subjects/{subjectId}")
   public ResponseEntity<Void> unenroll(
     @PathVariable("subjectId") @NotNull @Positive Long subjectId) {

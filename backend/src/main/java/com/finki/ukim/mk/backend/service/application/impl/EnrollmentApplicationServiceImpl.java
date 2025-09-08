@@ -29,6 +29,13 @@ public class EnrollmentApplicationServiceImpl implements EnrollmentApplicationSe
     return EnrollmentProfessorGroupDetailsDto.from(enrollment);
   }
 
+  @Deprecated
+  @Override
+  public EnrollmentProfessorGroupDetailsDto enrollAsStudent(Long subjectId, Long groupId) {
+    Enrollment enrollment = enrollmentService.enrollAsStudent(subjectId, groupId);
+    return EnrollmentProfessorGroupDetailsDto.from(enrollment);
+  }
+
   @Override
   public void unenroll(Long subjectId) {
     enrollmentService.unenroll(subjectId);

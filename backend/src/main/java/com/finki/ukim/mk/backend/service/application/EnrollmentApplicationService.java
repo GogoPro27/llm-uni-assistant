@@ -9,6 +9,7 @@ import java.util.List;
 public interface EnrollmentApplicationService {
   EnrollmentProfessorGroupDetailsDto enrollAndCreateGroup(Long subjectId);
   EnrollmentProfessorGroupDetailsDto enrollAndJoinGroup(Long subjectId, Long groupId);
+  EnrollmentProfessorGroupDetailsDto enrollAsStudent(Long subjectId, Long groupId);
   void unenroll(Long subjectId);
   List<EnrollmentLightDto> getEnrolledSubjects();
   List<SubjectLightDto> getSubjectsNotEnrolled();
